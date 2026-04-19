@@ -988,19 +988,29 @@ const emptyReport = () => {
 };
 
 /* Migration: khi load từ localStorage cũ có thể thiếu workflow/evidence/plan.
-   Đảm bảo mọi field đều có giá trị hợp lệ trước khi setData. */
+   Đảm bảo mọi field đều có giá trị hợp lệ trước khi setData.
+   Wrap try/catch để nếu data cũ bị hỏng → trả về empty thay vì crash. */
 const migrateReport = (data) => {
-  if (!data) return emptyReport();
-  const def = emptyReport();
-  return {
-    ...def,
-    ...data,
-    schoolInfo: { ...def.schoolInfo, ...(data.schoolInfo || {}) },
-    sources: { ...def.sources, ...(data.sources || {}) },
-    workflow: Array.isArray(data.workflow) && data.workflow.length === 7 ? data.workflow : def.workflow,
-    evidence: Array.isArray(data.evidence) ? data.evidence : def.evidence,
-    plan: { ...def.plan, ...(data.plan || {}) }
-  };
+  try {
+    if (!data || typeof data !== 'object') return emptyReport();
+    const def = emptyReport();
+    const schoolInfo = { ...def.schoolInfo, ...(data.schoolInfo || {}) };
+    // Đảm bảo council luôn là array
+    if (!Array.isArray(schoolInfo.council)) schoolInfo.council = def.schoolInfo.council;
+    return {
+      ...def,
+      ...data,
+      schoolInfo,
+      sources: { ...def.sources, ...(data.sources || {}) },
+      workflow: Array.isArray(data.workflow) && data.workflow.length === 7 ? data.workflow : def.workflow,
+      evidence: Array.isArray(data.evidence) ? data.evidence : def.evidence,
+      plan: { ...def.plan, ...(data.plan || {}) },
+      generated: (data.generated && typeof data.generated === 'object') ? data.generated : {}
+    };
+  } catch (e) {
+    console.warn('Migration lỗi, khởi tạo mới:', e);
+    return emptyReport();
+  }
 };
 
 /* Trích "Đạt Mức X" / "Không đạt" từ nội dung tự đánh giá của tiêu chí.
@@ -4324,13 +4334,35 @@ function CloudModal({ settings, onLoad, onClose }) {
 /* ============================================================
    MOUNT
 ============================================================ */
+// Error boundary bắt lỗi runtime của bất kỳ component nào (React 18)
+class ErrBoundary extends React.Component {
+  constructor(p) { super(p); this.state = { err: null }; }
+  static getDerivedStateFromError(err) { return { err }; }
+  componentDidCatch(err, info) { console.error('React render error:', err, info); }
+  render() {
+    if (this.state.err) {
+      return (
+        <div style={{padding:'2em',color:'#b91c1c',fontFamily:'system-ui',lineHeight:1.6}}>
+          <h2 style={{margin:'0 0 10px'}}>❌ Lỗi khởi tạo giao diện</h2>
+          <p style={{color:'#475569'}}>Mở DevTools (F12) → tab Console để xem chi tiết.</p>
+          <pre style={{whiteSpace:'pre-wrap',background:'#fee',padding:'1em',borderRadius:8,fontSize:12,color:'#7f1d1d'}}>
+            {this.state.err.stack || this.state.err.message || String(this.state.err)}
+          </pre>
+          <button onClick={() => { localStorage.clear(); location.reload(); }} style={{padding:'8px 16px',background:'#0c5da5',color:'#fff',border:0,borderRadius:6,cursor:'pointer',marginTop:10}}>🔄 Xoá cache &amp; tải lại</button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 function boot() {
   try {
     const b = document.getElementById('boot');
     if (b) b.style.display = 'none';
     const root = document.getElementById('root');
     if (!root) { alert('Lỗi: không tìm thấy #root'); return; }
-    ReactDOM.createRoot(root).render(<App/>);
+    ReactDOM.createRoot(root).render(<ErrBoundary><App/></ErrBoundary>);
   } catch (err) {
     document.body.innerHTML = '<div style="padding:2em;color:#b91c1c;font-family:system-ui"><h2>❌ Lỗi khởi tạo</h2><pre style="white-space:pre-wrap;background:#fee;padding:1em;border-radius:8px">' + (err.stack || err.message || err) + '</pre></div>';
   }
