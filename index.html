@@ -107,6 +107,12 @@
   .doc-body table td,.doc-body table th{border:1px solid #94a3b8;padding:6px 10px;vertical-align:top}
   .doc-body table th{background:#f1f5f9;font-weight:bold;text-align:center}
   .doc-placeholder{color:var(--faint);font-style:italic;font-family:'Inter',sans-serif;font-size:14px;padding:14px 16px;background:#f8fafc;border:1px dashed var(--line);border-radius:8px;text-align:center}
+  /* Hyperlink mã minh chứng [Hx-x.x-yy] trong preview — dẫn tới file Drive */
+  .doc-body a.mc-link,.mc-link{color:var(--brand-600);font-weight:500;text-decoration:underline;text-underline-offset:2px;text-decoration-thickness:1px;cursor:pointer;transition:all .12s}
+  .doc-body a.mc-link:hover,.mc-link:hover{color:var(--brand);background:var(--brand-50);text-decoration-thickness:2px;border-radius:3px;padding:0 2px;margin:0 -2px}
+  /* Mã không có link — underline nét đứt mờ để user biết CHƯA thêm link file Drive */
+  .doc-body .mc-code-nolink,.mc-code-nolink{color:var(--ink-muted);text-decoration:underline dotted;text-decoration-color:#cbd5e1;text-underline-offset:3px;cursor:help}
+  .doc-body .mc-code-nolink:hover,.mc-code-nolink:hover{color:var(--amber);text-decoration-color:var(--amber)}
   .section-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding-bottom:6px;border-bottom:1px solid var(--line-soft)}
   .section-meta{font-size:12px;color:var(--faint);font-weight:500;letter-spacing:0.04em;text-transform:uppercase}
   .section-actions{display:flex;gap:4px;opacity:0;transition:opacity .15s}
@@ -1376,7 +1382,59 @@ const buildSectionsList = () => {
    CSS text-transform vẫn giữ trên SCREEN (preview) vì browser xử lý đúng. */
 const U = (s) => String(s || '').toLocaleUpperCase('vi-VN');
 
-const mdToHtml = (md) => {
+/* Tự động chèn hyperlink vào các mã minh chứng [Hx-x.x-yy].
+   NGUỒN data (2 loại, ưu tiên thứ tự):
+     1. `evidence[]` — CRUD structured (field fileUrl)
+     2. `evidenceListText` — textarea text có inline URL, format ví dụ:
+          [H1-1.1-01] Kế hoạch chiến lược 2021-2025 · https://drive.google.com/file/d/...
+          [H1-1.1-02] Quyết định phê duyệt (https://drive.google.com/...)
+          [H1-1.1-03] Mô tả không có link  ← sẽ không auto-link
+   Output:
+     - Mã có link → <a class="mc-link" href="...">...</a>
+     - Mã không có link → <span class="mc-code-nolink" title="Chưa có link file — thêm ở tab 🗂 Minh chứng">...</span>
+   Security: chỉ chấp nhận http(s) URL. Title escape để chống XSS. */
+const _isSafeHttpUrl = (url) => typeof url === 'string' && /^https?:\/\/[^\s<>"']+$/i.test(url.trim());
+const autoLinkEvidence = (text, evidence, evidenceListText) => {
+  if (!text) return text;
+  const evMap = {};
+  // Nguồn 1: evidence[] CRUD (ưu tiên)
+  if (Array.isArray(evidence)) {
+    evidence.forEach(e => {
+      if (e && e.code && _isSafeHttpUrl(e.fileUrl)) {
+        evMap[e.code] = { url: e.fileUrl.trim(), title: e.title || '' };
+      }
+    });
+  }
+  // Nguồn 2: parse URL inline trong evidenceList textarea
+  if (typeof evidenceListText === 'string' && evidenceListText.trim()) {
+    evidenceListText.split('\n').forEach(line => {
+      const codeMatch = line.match(/(\[H\d+-\d+\.\d+-\d+\])/);
+      if (!codeMatch) return;
+      const code = codeMatch[1];
+      if (evMap[code]) return;  // đã có từ nguồn 1, ưu tiên
+      const urlMatch = line.match(/(https?:\/\/[^\s)"'<>]+)/);
+      if (!urlMatch) return;
+      // Tên = phần giữa mã và URL
+      const afterCode = line.slice(line.indexOf(code) + code.length);
+      const beforeUrl = afterCode.slice(0, afterCode.indexOf(urlMatch[1]));
+      const title = beforeUrl.replace(/^[\s·|,\-(]+|[\s)]+$/g, '').trim();
+      evMap[code] = { url: urlMatch[1], title };
+    });
+  }
+  // Tổng hợp: replace mọi mã trong text
+  return text.replace(/\[H\d+-\d+\.\d+-\d+\]/g, (match) => {
+    const ev = evMap[match];
+    if (ev) {
+      const safeTitle = String(ev.title || '').replace(/"/g, '&quot;').replace(/[<>]/g, '');
+      const tooltip = safeTitle ? `${match} — ${safeTitle}` : match;
+      return `<a href="${ev.url}" target="_blank" rel="noopener noreferrer" class="mc-link" title="${tooltip}">${match}</a>`;
+    }
+    // Mã chưa có link → span với tooltip nhắc user thêm
+    return `<span class="mc-code-nolink" title="Chưa có link file Drive cho ${match} — bấm tab 🗂 Minh chứng để thêm">${match}</span>`;
+  });
+};
+
+const mdToHtml = (md, evidence, evidenceListText) => {
   if (!md) return '<p class="placeholder">[CHƯA TẠO NỘI DUNG]</p>';
   let t = md;
   t = t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -1415,7 +1473,8 @@ const mdToHtml = (md) => {
       out += '<p>' + l + '</p>';
     }
   }
-  return out;
+  // Cuối cùng: auto-link mã minh chứng [Hx-x.x-yy] → <a href> nếu có fileUrl
+  return autoLinkEvidence(out, evidence, evidenceListText);
 };
 
 const buildFullDocHtml = (data) => {
@@ -1460,6 +1519,9 @@ td, th { border: 1pt solid #000; padding: 4pt 6pt; text-align: left; vertical-al
 th { text-align: center; font-weight: bold; }
 .page-break { page-break-after: always; mso-break-type: section-break; }
 .cover-spacer { height: 120pt; }
+/* Hyperlink mã minh chứng — Word tôn trọng <a href> trong .doc HTML */
+a.mc-link, a { color: #0c5da5; text-decoration: underline; }
+a.mc-link:hover { color: #074388; }
 </style>
 </head>
 <body>
@@ -1508,22 +1570,24 @@ th { text-align: center; font-weight: bold; }
   h += buildBangTongHopHtml(data);
   h += `<p class="center no-indent page-break">&nbsp;</p>`;
 
-  // Nội dung
-  h += `<h1>PHẦN I. CƠ SỞ DỮ LIỆU</h1>` + mdToHtml(get('coso'));
+  // Nội dung — truyền evidence xuống mdToHtml để auto-link các mã [Hx-x.x-yy] sang file Drive
+  const ev = data.evidence || [];
+  const evText = (data.sources && data.sources.evidenceList) || '';
+  h += `<h1>PHẦN I. CƠ SỞ DỮ LIỆU</h1>` + mdToHtml(get('coso'), ev, evText);
   h += `<p class="center no-indent page-break">&nbsp;</p>`;
   h += `<h1>PHẦN II. TỰ ĐÁNH GIÁ</h1>`;
-  h += `<h2>A. ĐẶT VẤN ĐỀ</h2>` + mdToHtml(get('datvande'));
+  h += `<h2>A. ĐẶT VẤN ĐỀ</h2>` + mdToHtml(get('datvande'), ev, evText);
   h += `<h2>B. TỰ ĐÁNH GIÁ</h2>`;
   STANDARDS.forEach(std => {
     h += `<h3>TIÊU CHUẨN ${std.id}: ${U(std.name)}</h3>`;
-    h += `<h4>Mở đầu</h4>` + mdToHtml(get(`std-${std.id}-modau`));
+    h += `<h4>Mở đầu</h4>` + mdToHtml(get(`std-${std.id}-modau`), ev, evText);
     std.criteria.forEach(cr => {
-      h += mdToHtml(get(`tc-${std.id}-${cr.num}`));
+      h += mdToHtml(get(`tc-${std.id}-${cr.num}`), ev, evText);
     });
-    h += `<h4>Kết luận về Tiêu chuẩn ${std.id}</h4>` + mdToHtml(get(`std-${std.id}-ketluan`));
+    h += `<h4>Kết luận về Tiêu chuẩn ${std.id}</h4>` + mdToHtml(get(`std-${std.id}-ketluan`), ev, evText);
   });
   h += `<p class="center no-indent page-break">&nbsp;</p>`;
-  h += `<h1>PHẦN III. KẾT LUẬN CHUNG</h1>` + mdToHtml(get('ketluan'));
+  h += `<h1>PHẦN III. KẾT LUẬN CHUNG</h1>` + mdToHtml(get('ketluan'), ev, evText);
 
   // Phần IV. Phụ lục — danh mục minh chứng
   h += `<p class="center no-indent page-break">&nbsp;</p>`;
@@ -1576,6 +1640,25 @@ const buildPhuLucHtml = (data) => {
   const list = (data.sources?.evidenceList || '').trim();
   if (!list) return `<p style="color:#94a3b8;font-style:italic">[Chưa có danh mục minh chứng. Hãy bấm 🗂 Tư liệu ở thanh tiêu đề để bổ sung.]</p>`;
 
+  // Build map mã → fileUrl từ evidence[] + parse URL trong evidenceList text
+  const evMap = {};
+  (data.evidence || []).forEach(e => {
+    if (e.code && _isSafeHttpUrl(e.fileUrl)) evMap[e.code] = e.fileUrl.trim();
+  });
+  list.split('\n').forEach(line => {
+    const cm = line.match(/(\[H\d+-\d+\.\d+-\d+\])/);
+    if (!cm || evMap[cm[1]]) return;
+    const um = line.match(/(https?:\/\/[^\s)"'<>]+)/);
+    if (um) evMap[cm[1]] = um[1];
+  });
+  // Wrap code thành <a href> nếu có Drive link
+  const linkCode = (code) => {
+    const url = evMap[code];
+    return url
+      ? `<a href="${url}" target="_blank" rel="noopener noreferrer" style="color:#0c5da5;text-decoration:underline">${code}</a>`
+      : code;
+  };
+
   // Group by tiêu chí (mã Hx-x.x-xx)
   const grouped = {};
   list.split('\n').forEach(line => {
@@ -1601,7 +1684,7 @@ const buildPhuLucHtml = (data) => {
       if (items && items.length > 0) {
         stdHtml += `<p style="margin-top:6pt"><i>Tiêu chí ${key}: ${cr.name}</i></p>`;
         items.forEach(it => {
-          stdHtml += `<p class="dash">- <b>${it.code}</b> ${it.desc}</p>`;
+          stdHtml += `<p class="dash">- <b>${linkCode(it.code)}</b> ${it.desc}</p>`;
         });
       }
     });
@@ -1622,7 +1705,7 @@ const buildPhuLucHtml = (data) => {
     const l = line.trim();
     if (!l) return;
     const m = l.match(/(\[H\d-\d+\.\d+-\d+\])\s*(.+)/);
-    if (m) h += `<tr><td style="font-family:'Consolas',monospace">${m[1]}</td><td>${m[2]}</td></tr>`;
+    if (m) h += `<tr><td style="font-family:'Consolas',monospace">${linkCode(m[1])}</td><td>${m[2]}</td></tr>`;
   });
   h += `</table>`;
   return h;
@@ -2028,6 +2111,8 @@ function OutlineSidebar({ standards, data, ui, setUi, activeId, onClick, generat
 function DocumentView({ data, standards, sections, activeId, setActiveId, editing, editBuf, setEditBuf, startEdit, saveEdit, cancelEdit, generating, generateOne, yearStr }) {
   const info = data.schoolInfo || {};
 
+  const evidence = data.evidence || [];
+  const evidenceListText = (data.sources && data.sources.evidenceList) || '';
   const renderBody = (md) => {
     if (!md) return <div className="doc-placeholder">Chưa có nội dung. Dùng nút <b>✨ Tạo bằng AI</b> ở panel bên phải, hoặc bấm <b>Sửa</b> để viết tay.</div>;
     const parts = [];
@@ -2035,8 +2120,10 @@ function DocumentView({ data, standards, sections, activeId, setActiveId, editin
     let buf = [];
     const flush = (key) => {
       if (buf.length === 0) return;
-      const p = buf.join('\n');
-      parts.push(<p key={key} dangerouslySetInnerHTML={{ __html: p.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/\*([^*]+?)\*/g, '<em>$1</em>') }}/>);
+      let p = buf.join('\n');
+      p = p.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/\*([^*]+?)\*/g, '<em>$1</em>');
+      p = autoLinkEvidence(p, evidence, evidenceListText);  // tự động chèn <a> cho mã [Hx-x.x-yy] có fileUrl
+      parts.push(<p key={key} dangerouslySetInnerHTML={{ __html: p }}/>);
       buf = [];
     };
     lines.forEach((l, i) => {
@@ -4236,7 +4323,7 @@ function SourcesModal({ sources, settings, onSave, onClose }) {
             <label><IList className="w-3.5 h-3.5 inline-block mr-1"/>Danh mục minh chứng (mỗi dòng một minh chứng, có mã [Hx-x.x-xx])</label>
             <textarea rows={12} value={s.evidenceList} onChange={e => setS(p => ({ ...p, evidenceList: e.target.value }))}
               style={{fontFamily:'ui-monospace,monospace',fontSize:12}}/>
-            <div className="hint">Đã nạp sẵn 30+ mã minh chứng chuẩn cho trường Tiểu học theo CV 5932.</div>
+            <div className="hint">Đã nạp sẵn 30+ mã minh chứng chuẩn. <b>Mẹo:</b> Dán Google Drive link sau mỗi dòng để AI tự chèn hyperlink vào báo cáo. VD: <code style={{fontSize:11,background:'#eff6fc',padding:'1px 4px',borderRadius:3}}>{'[H1-1.1-01] Kế hoạch chiến lược · https://drive.google.com/file/d/...'}</code></div>
           </div>
 
           <div className="field">
