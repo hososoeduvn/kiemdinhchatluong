@@ -1,0 +1,2305 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TĐG-TH · Viết Báo cáo Tự đánh giá Trường Tiểu học</title>
+<meta name="description" content="Ứng dụng AI viết Báo cáo Tự đánh giá (KĐCLGD) cho Trường Tiểu học theo TT 17/2018 + TT 22/2024 BGDĐT + CV 5932">
+<script src="https://cdn.tailwindcss.com"></script>
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500&family=Be+Vietnam+Pro:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E📚%3C/text%3E%3C/svg%3E">
+<style>
+  :root{
+    --ink:#0f172a; --ink-muted:#475569; --faint:#94a3b8;
+    --bg:#f1f5f9; --panel:#ffffff; --line:#e2e8f0; --line-soft:#eef2f6;
+    --brand:#0c5da5; --brand-600:#074388; --brand-50:#eff6fc; --brand-100:#d6e5f3;
+    --amber:#b45309; --amber-50:#fffbeb;
+    --rose:#e11d48; --rose-50:#fff1f2;
+    --sky:#0c5da5; --sky-50:#eff6fc;
+    /* Dark navy sidebar theme (both side panels) */
+    --sb-bg:#0c5da5;
+    --sb-bg-2:#0a4d8a;
+    --sb-ink:#ffffff;
+    --sb-ink-muted:rgba(255,255,255,0.82);
+    --sb-faint:rgba(255,255,255,0.55);
+    --sb-line:rgba(255,255,255,0.14);
+    --sb-line-soft:rgba(255,255,255,0.08);
+    --sb-hover:rgba(255,255,255,0.08);
+    --sb-active:rgba(255,255,255,0.16);
+  }
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:'Inter','Be Vietnam Pro',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+  body{overflow:hidden}
+  *{box-sizing:border-box}
+  .display{font-family:'Fraunces',Georgia,serif;letter-spacing:-0.01em}
+  .doc-font{font-family:'Times New Roman','Liberation Serif',Georgia,serif}
+
+  #boot{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:var(--bg);z-index:9999;flex-direction:column;gap:14px;color:var(--ink-muted);font-size:14px}
+  #boot .sp{width:32px;height:32px;border:3px solid var(--line);border-top-color:var(--brand);border-radius:50%;animation:sp .8s linear infinite}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  .fadein{animation:fi .22s ease-out}
+  @keyframes fi{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
+
+  .app{height:100vh;display:grid;grid-template-rows:56px 1fr;overflow:hidden}
+  .main{display:grid;grid-template-columns:280px 1fr;height:calc(100vh - 56px);overflow:hidden}
+  @media(max-width:1024px){.main{grid-template-columns:240px 1fr}}
+  @media(max-width:768px){.main{grid-template-columns:0 1fr}.outline{display:none}}
+
+  /* TOP BAR — dải xanh liền mạch với sidebar trái */
+  .topbar{background:var(--sb-bg);border-bottom:1px solid var(--sb-line);display:flex;align-items:center;gap:14px;padding:0 16px;height:56px;position:relative;z-index:20;color:var(--sb-ink)}
+  .topbar .brand-title{color:#fff}
+  .topbar .brand-sub{color:rgba(255,255,255,0.7)}
+  .topbar .save-status{color:rgba(255,255,255,0.78)}
+  .topbar .sch-pill{background:rgba(255,255,255,0.12);color:#fff;border:1px solid rgba(255,255,255,0.2)}
+  .topbar .sch-pill:hover{background:rgba(255,255,255,0.22);border-color:rgba(255,255,255,0.32);color:#fff}
+  .topbar .sch-pill span{color:inherit !important}
+  .topbar .btn{background:rgba(255,255,255,0.1);border-color:rgba(255,255,255,0.2);color:#fff}
+  .topbar .btn:hover{background:rgba(255,255,255,0.22);border-color:rgba(255,255,255,0.35);color:#fff}
+  .topbar .btn-soft{background:#fff;color:var(--brand-600);border-color:#fff;font-weight:600}
+  .topbar .btn-soft:hover{background:#f1f5f9;color:var(--brand-600);border-color:#f1f5f9}
+  .topbar .btn-ghost{background:transparent;border-color:transparent;color:rgba(255,255,255,0.85)}
+  .topbar .btn-ghost:hover{background:rgba(255,255,255,0.12);border-color:transparent;color:#fff}
+
+  .outline{background:var(--sb-bg);border-right:1px solid var(--sb-line);overflow-y:auto;overflow-x:hidden;color:var(--sb-ink)}
+  .outline::-webkit-scrollbar,.doc-scroll::-webkit-scrollbar{width:8px}
+  .outline::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.2);border-radius:4px}
+  .outline::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,0.35)}
+  .doc-scroll::-webkit-scrollbar-thumb{background:#d8e0e8;border-radius:4px}
+  .doc-scroll::-webkit-scrollbar-thumb:hover{background:#b8c4d0}
+  .doc-scroll{overflow-y:auto;background:var(--bg)}
+
+  .doc-wrap{max-width:860px;margin:0 auto;padding:28px 32px 120px}
+  /* CĂN CỨ: Nghị định 30/2020/NĐ-CP + yêu cầu user 2026-04-19:
+     Toàn bộ BÁO CÁO dùng Times New Roman 14pt. Tiêu đề lớn in hoa đậm.
+     UI shell (sidebar/topbar/modal) giữ Inter cho dễ đọc. */
+  .doc-page{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:48px 56px;box-shadow:0 1px 2px rgba(15,23,42,.04),0 8px 24px -12px rgba(15,23,42,.08);font-family:'Times New Roman','Liberation Serif',Georgia,serif}
+  .doc-section{scroll-margin-top:80px;margin-top:40px}
+  .doc-section:first-child{margin-top:0}
+  .doc-h1{font-family:'Times New Roman',serif;font-size:20pt;font-weight:bold;color:var(--ink);letter-spacing:0;margin:0 0 6pt;text-transform:uppercase}
+  .doc-h2{font-family:'Times New Roman',serif;font-size:16pt;font-weight:bold;color:var(--ink);margin:16pt 0 8pt;letter-spacing:0;text-transform:uppercase}
+  .doc-h3{font-family:'Times New Roman',serif;font-size:14pt;font-weight:bold;color:var(--ink);margin:12pt 0 6pt;text-transform:uppercase;letter-spacing:0}
+  .doc-body{font-family:'Times New Roman',serif;font-size:14pt;line-height:1.6;color:#111827;white-space:pre-wrap;word-wrap:break-word}
+  .doc-body strong,.doc-body b{color:var(--ink);font-weight:bold}
+  .doc-body p{margin:0 0 8pt;text-indent:1.27cm;text-align:justify}
+  .doc-body p:first-child{margin-top:0}
+  .doc-body table{border-collapse:collapse;width:100%;margin:8pt 0;font-size:13pt}
+  .doc-body table td,.doc-body table th{border:1px solid #94a3b8;padding:6px 10px;vertical-align:top}
+  .doc-body table th{background:#f1f5f9;font-weight:bold;text-align:center}
+  .doc-placeholder{color:var(--faint);font-style:italic;font-family:'Inter',sans-serif;font-size:14px;padding:14px 16px;background:#f8fafc;border:1px dashed var(--line);border-radius:8px;text-align:center}
+  .section-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding-bottom:6px;border-bottom:1px solid var(--line-soft)}
+  .section-meta{font-size:12px;color:var(--faint);font-weight:500;letter-spacing:0.04em;text-transform:uppercase}
+  .section-actions{display:flex;gap:4px;opacity:0;transition:opacity .15s}
+  .doc-section:hover .section-actions,.doc-section.active .section-actions{opacity:1}
+  .doc-section.active{position:relative}
+  .doc-section.active::before{content:'';position:absolute;left:-18px;top:0;bottom:0;width:3px;background:var(--brand);border-radius:3px}
+
+  textarea.edit{width:100%;min-height:220px;padding:14px;border:1px solid var(--brand);border-radius:8px;font-family:'Times New Roman',serif;font-size:15px;line-height:1.65;resize:vertical;outline:none;background:#fffef8}
+  textarea.edit:focus{box-shadow:0 0 0 3px var(--brand-100)}
+
+  .outline-h{padding:14px 16px 10px;position:sticky;top:0;background:var(--sb-bg);border-bottom:1px solid var(--sb-line);z-index:2}
+  .outline-search{width:100%;padding:7px 10px;border:1px solid var(--sb-line);border-radius:6px;font-size:13px;background:rgba(255,255,255,0.08);color:var(--sb-ink);outline:none}
+  .outline-search::placeholder{color:var(--sb-faint)}
+  .outline-search:focus{border-color:rgba(255,255,255,0.4);background:rgba(255,255,255,0.15)}
+  .ol-item{display:flex;align-items:center;gap:8px;padding:6px 10px;margin:1px 8px;border-radius:6px;cursor:pointer;font-size:13px;color:var(--sb-ink-muted);user-select:none}
+  .ol-item:hover{background:var(--sb-hover);color:var(--sb-ink)}
+  .ol-item.active{background:var(--sb-active);color:#fff;font-weight:500;box-shadow:inset 2px 0 0 #fff}
+  .ol-item .dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,0.3);flex-shrink:0}
+  .ol-item.done .dot{background:#4ade80}
+  .ol-item.gen .dot{background:#7dd3fc;animation:blink 1s ease-in-out infinite}
+  .ol-item.err .dot{background:#fda4af}
+  @keyframes blink{50%{opacity:.3}}
+  .ol-section{padding:10px 10px 4px 16px;font-size:11px;color:var(--sb-faint);text-transform:uppercase;letter-spacing:0.08em;font-weight:600;margin-top:8px;border-top:1px solid var(--sb-line-soft)}
+  .ol-item.indent{padding-left:26px;font-size:12.5px}
+  .ol-item.indent2{padding-left:36px;font-size:12px}
+  .ol-group{padding:6px 10px 6px 16px;font-weight:600;font-size:12.5px;color:var(--sb-ink);cursor:pointer;display:flex;align-items:center;gap:6px;margin:2px 8px;border-radius:6px}
+  .ol-group:hover{background:var(--sb-hover)}
+  .ol-group .chev{transition:transform .15s;color:var(--sb-ink-muted)}
+  .ol-group.open .chev{transform:rotate(90deg)}
+  .ol-tree{overflow:hidden;max-height:0;transition:max-height .25s ease}
+  .ol-tree.open{max-height:2000px}
+
+  .btn{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:7px;font-size:13px;font-weight:500;border:1px solid var(--line);background:var(--panel);color:var(--ink);cursor:pointer;transition:all .12s;white-space:nowrap}
+  .btn:hover{background:#f8fafc;border-color:#cbd5e1}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .btn-primary{background:var(--brand);color:#fff;border-color:var(--brand)}
+  .btn-primary:hover{background:var(--brand-600);border-color:var(--brand-600)}
+  .btn-ghost{border-color:transparent;background:transparent}
+  .btn-ghost:hover{background:#f1f5f9;border-color:transparent}
+  .btn-soft{background:var(--brand-50);color:var(--brand-600);border-color:transparent}
+  .btn-soft:hover{background:var(--brand-100)}
+  .btn-xs{padding:4px 8px;font-size:12px;gap:4px}
+  .btn-icon{width:30px;height:30px;padding:0;justify-content:center}
+
+  /* Guide modal — light theme (bên trong modal trắng) */
+  .dp-empty{padding:24px 20px;color:var(--ink-muted);font-size:13px;line-height:1.6}
+  .dp-head{padding:0 0 14px;border-bottom:1px solid var(--line-soft);margin-bottom:14px}
+  .dp-kicker{font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--brand-600);font-weight:600}
+  .dp-title{font-family:'Inter',sans-serif;font-size:18px;font-weight:700;margin-top:4px;line-height:1.35;color:var(--ink)}
+  .dp-refs{font-size:12px;color:var(--faint);margin-top:6px;font-style:italic}
+  .dp-body{padding:0}
+  .dp-tabs{display:flex;gap:2px;background:#f1f5f9;border-radius:8px;padding:3px;margin-bottom:12px}
+  .dp-tab{flex:1;padding:7px 10px;font-size:12.5px;font-weight:500;border-radius:5px;cursor:pointer;color:var(--ink-muted);text-align:center;transition:all .12s}
+  .dp-tab.active{background:var(--panel);color:var(--brand-600);box-shadow:0 1px 2px rgba(15,23,42,.08)}
+  .dp-muc-desc{font-size:12px;color:var(--faint);margin-bottom:10px;font-style:italic;padding:0 2px}
+  .dp-chibao{margin-bottom:10px;padding:11px 13px;background:#f8fafc;border:1px solid var(--line-soft);border-radius:7px;font-size:13.5px;line-height:1.6;color:var(--ink)}
+  .dp-section-label{font-size:11px;font-weight:600;color:var(--faint);text-transform:uppercase;letter-spacing:0.06em;margin:16px 0 8px}
+
+  .brand-logo{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,#1470bd,#0c5da5);display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;flex-shrink:0;box-shadow:0 2px 6px rgba(12,93,165,0.25)}
+  .sch-pill{display:flex;align-items:center;gap:6px;padding:5px 12px;background:#f1f5f9;border-radius:999px;font-size:12.5px;color:var(--ink);cursor:pointer;border:1px solid transparent}
+  .sch-pill:hover{background:var(--brand-50);border-color:var(--brand-100);color:var(--brand-600)}
+  .save-status{font-size:12px;color:var(--faint);display:flex;align-items:center;gap:6px}
+
+  .overlay{position:fixed;inset:0;background:rgba(15,23,42,.5);z-index:30;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px)}
+  .modal{background:var(--panel);border-radius:14px;max-width:640px;width:100%;max-height:86vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 25px 50px -12px rgba(0,0,0,.25)}
+  .modal-lg{max-width:900px}
+  .modal-h{padding:18px 22px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between}
+  .modal-b{padding:22px;overflow-y:auto;flex:1}
+  .modal-f{padding:14px 22px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:8px;background:#f8fafc}
+
+  .field{display:block;margin-bottom:14px}
+  .field label{display:block;font-size:12.5px;font-weight:600;color:var(--ink);margin-bottom:5px}
+  .field label .req{color:var(--rose);margin-left:2px}
+  .field input,.field select,.field textarea{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:6px;font-size:13.5px;font-family:inherit;background:#fff;outline:none}
+  .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-100)}
+  .field .hint{font-size:11.5px;color:var(--faint);margin-top:4px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+
+  .chip{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:600;letter-spacing:0.02em}
+  .chip-ok{background:var(--brand-50);color:var(--brand-600)}
+  .chip-warn{background:var(--amber-50);color:var(--amber)}
+  .chip-err{background:var(--rose-50);color:var(--rose)}
+  .chip-sky{background:var(--sky-50);color:var(--sky)}
+  .progress-bar{height:4px;background:#e2e8f0;border-radius:2px;overflow:hidden}
+  .progress-bar>div{height:100%;background:var(--brand);transition:width .3s}
+  .outline .progress-bar{background:rgba(255,255,255,0.15)}
+  .outline .progress-bar>div{background:#4ade80}
+  .divider{height:1px;background:var(--line-soft);margin:12px 0}
+  a{color:var(--brand-600);text-decoration:none}
+  a:hover{text-decoration:underline}
+
+  .toast{position:fixed;bottom:20px;right:20px;z-index:40;padding:10px 16px;background:var(--ink);color:#fff;border-radius:8px;font-size:13px;box-shadow:0 8px 24px rgba(0,0,0,.2);animation:tf .3s ease}
+  @keyframes tf{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+  @media print{
+    body{overflow:auto;background:#fff}
+    .app{display:block;height:auto}
+    .topbar,.outline,.detail-panel,.section-actions,.doc-placeholder{display:none!important}
+    .main{display:block;height:auto}
+    .doc-scroll{overflow:visible}
+    .doc-wrap{max-width:none;padding:0;margin:0}
+    .doc-page{border:0;box-shadow:none;padding:0}
+  }
+</style>
+</head>
+<body>
+<div id="boot"><div class="sp"></div><div>Đang khởi tạo TĐG-TH…</div></div>
+<div id="root"></div>
+
+<script type="text/babel" data-presets="react">
+const { useState, useEffect, useRef, useMemo } = React;
+
+/* ============================================================
+   ICONS · lucide-style
+============================================================ */
+const Ic = (paths, extra = null) => ({ className = 'w-4 h-4', ...props }) => (
+  <svg className={className} fill="none" stroke="currentColor" strokeWidth="2"
+       strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24" {...props}>
+    {paths.map((d, i) => <path key={i} d={d}/>)}
+    {extra}
+  </svg>
+);
+const ICog = Ic(['M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2Z'], <circle cx="12" cy="12" r="3"/>);
+const ISave = Ic(['M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z','M17 21v-8H7v8','M7 3v5h8']);
+const IDown = Ic(['M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4','M7 10l5 5 5-5','M12 15V3']);
+const ISpark = Ic(['M9.94 15.5A2 2 0 0 0 8.5 14.06l-6.14-1.58a.5.5 0 0 1 0-.96L8.5 9.94A2 2 0 0 0 9.94 8.5l1.58-6.14a.5.5 0 0 1 .96 0L14.06 8.5A2 2 0 0 0 15.5 9.94l6.14 1.58a.5.5 0 0 1 0 .96L15.5 14.06a2 2 0 0 0-1.44 1.44l-1.58 6.14a.5.5 0 0 1-.96 0z','M20 3v4','M22 5h-4','M4 17v2','M5 18H3']);
+const IEdit = Ic(['M12 20h9','M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z']);
+const ILoad = Ic(['M21 12a9 9 0 1 1-6.22-8.56']);
+const ICheck = Ic(['m9 12 2 2 4-4'], <circle cx="12" cy="12" r="10"/>);
+const IX = Ic(['M18 6 6 18','m6 6 12 12']);
+const IPlus = Ic(['M5 12h14','M12 5v14']);
+const ITrash = Ic(['M3 6h18','M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6','M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2','M10 11v6','M14 11v6']);
+const IRefresh = Ic(['M3 12a9 9 0 0 1 15-6.7L21 8','M21 3v5h-5','M21 12a9 9 0 0 1-15 6.7L3 16','M8 16H3v5']);
+const ICloud = Ic(['M17.5 19a4.5 4.5 0 1 0 0-9h-1.8A7 7 0 1 0 4 15.9']);
+const ICloudUp = Ic(['M12 13v8','m8 17 4-4 4 4','M20 16.2A4.5 4.5 0 0 0 17.5 8h-1.8A7 7 0 1 0 4 14.9']);
+const ICloudDown = Ic(['M12 13v8','m16 17-4 4-4-4','M20 16.2A4.5 4.5 0 0 0 17.5 8h-1.8A7 7 0 1 0 4 14.9']);
+const IList = Ic(['M8 6h13','M8 12h13','M8 18h13','M3 6h.01','M3 12h.01','M3 18h.01']);
+const ISchool = Ic(['m4 6 8-4 8 4','M18 10v8','M14 8v12','M10 8v12','M6 10v8','M2 22h20']);
+const IFolder = Ic(['m6 14 1.5-2.9A2 2 0 0 1 9.2 10H20a2 2 0 0 1 2 2.1l-1 9a2 2 0 0 1-2 1.9H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9L10 5h8a2 2 0 0 1 2 2v3']);
+const IChev = Ic(['m9 18 6-6-6-6']);
+const IInfo = Ic(['M12 16v-4','M12 8h.01'], <circle cx="12" cy="12" r="10"/>);
+const IEye = Ic(['M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z'], <circle cx="12" cy="12" r="3"/>);
+const ILink = Ic(['M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71','M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71']);
+const IDoc = Ic(['M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z','M14 2v6h6','M16 13H8','M16 17H8','M10 9H8']);
+
+/* ============================================================
+   DATA · BỘ TIÊU CHUẨN & TIÊU CHÍ TIỂU HỌC
+   Căn cứ:
+     - TT 17/2018/TT-BGDĐT (22/8/2018) — bản gốc cho trường tiểu học
+     - TT 22/2024/TT-BGDĐT (10/12/2024, hiệu lực 25/01/2025) — sửa đổi:
+         + Điều 9 (Tiêu chuẩn 3 CSVC) viết lại: 6 → 3 tiêu chí (3.1/3.2/3.3)
+         + Tiêu chí 1.2 đổi tên: "Hội đồng trường và các hội đồng khác"
+         + Tiêu chí 5.1 đổi tên: "Kế hoạch giáo dục của nhà trường"
+         + Tiêu chí 5.5 chỉnh chỉ báo Mức 1
+         + Điều 22 (Mức 4) bổ sung khoản 6, 7 về giáo viên và kết quả
+     - CV 5932/BGDĐT-QLCL (28/12/2018) — hướng dẫn tự đánh giá cơ sở giáo dục phổ thông
+   Mỗi tiêu chí có `levels: {1,2,3,4}` chứa chỉ báo NGUYÊN VĂN.
+============================================================ */
+
+const MUC_DESC = {
+  1: 'Mức 1 — yêu cầu tối thiểu. Trường phải đạt TOÀN BỘ chỉ báo Mức 1 để được công nhận Đạt KĐCLGD Mức 1.',
+  2: 'Mức 2 — yêu cầu nâng cao. Chỉ xét khi đã đạt Mức 1. Đạt Mức 2 → Đạt KĐCLGD cấp độ 2.',
+  3: 'Mức 3 — yêu cầu cao. Chỉ xét khi đã đạt Mức 2. Đạt Mức 3 → Đạt KĐCLGD cấp độ 3 và có thể xét Chuẩn quốc gia Mức 1.',
+  4: 'Mức 4 — Chuẩn quốc gia Mức 2. Chỉ xét khi đã đạt Mức 3. Áp dụng theo Điều 22 TT 17/2018 và bổ sung của TT 22/2024.'
+};
+
+const STANDARDS = [
+  { id: 1, name: 'Tổ chức và quản lý nhà trường', refs: 'TT 17/2018 Điều 7-11', criteria: [
+    { num: 1, name: 'Phương hướng, chiến lược xây dựng và phát triển nhà trường', levels: {
+      1: [
+        'a) Phù hợp mục tiêu giáo dục được quy định tại Luật Giáo dục, định hướng phát triển kinh tế - xã hội của địa phương theo từng giai đoạn và các nguồn lực của nhà trường',
+        'b) Được xác định bằng văn bản và cấp có thẩm quyền phê duyệt',
+        'c) Được công bố công khai bằng hình thức niêm yết tại nhà trường hoặc đăng tải trên trang thông tin điện tử của nhà trường (nếu có) hoặc đăng tải trên các phương tiện thông tin đại chúng của địa phương, trang thông tin điện tử của cơ quan quản lý giáo dục cấp trên'
+      ],
+      2: ['Nhà trường có các giải pháp giám sát việc thực hiện phương hướng, chiến lược xây dựng và phát triển'],
+      3: ['Định kỳ rà soát, bổ sung, điều chỉnh phương hướng, chiến lược. Tổ chức xây dựng phương hướng, chiến lược có sự tham gia của các thành viên trong Hội đồng trường (Hội đồng quản trị đối với trường tư thục), cán bộ quản lý, giáo viên, nhân viên, cha mẹ học sinh và cộng đồng'],
+      4: []
+    }},
+    { num: 2, name: 'Hội đồng trường và các hội đồng khác', levels: {
+      1: [
+        'a) Được thành lập theo quy định',
+        'b) Thực hiện chức năng, nhiệm vụ và quyền hạn theo quy định',
+        'c) Các hoạt động được định kỳ rà soát, đánh giá'
+      ],
+      2: ['Hoạt động có hiệu quả, góp phần nâng cao chất lượng giáo dục của nhà trường'],
+      3: [], 4: []
+    }},
+    { num: 3, name: 'Tổ chức Đảng Cộng sản Việt Nam, các đoàn thể và tổ chức khác trong nhà trường', levels: {
+      1: [
+        'a) Các đoàn thể và tổ chức khác trong nhà trường có cơ cấu tổ chức theo quy định',
+        'b) Hoạt động theo quy định',
+        'c) Hằng năm, các hoạt động được rà soát, đánh giá'
+      ],
+      2: [
+        'a) Tổ chức Đảng Cộng sản Việt Nam có cơ cấu tổ chức và hoạt động theo quy định; trong 05 năm liên tiếp tính đến thời điểm đánh giá, có ít nhất 01 năm hoàn thành tốt nhiệm vụ, các năm còn lại hoàn thành nhiệm vụ trở lên',
+        'b) Các đoàn thể, tổ chức khác có đóng góp tích cực cho các hoạt động của nhà trường'
+      ],
+      3: [
+        'a) Trong 05 năm liên tiếp tính đến thời điểm đánh giá, tổ chức Đảng Cộng sản Việt Nam có ít nhất 02 năm hoàn thành tốt nhiệm vụ, các năm còn lại hoàn thành nhiệm vụ trở lên',
+        'b) Các đoàn thể, tổ chức khác đóng góp hiệu quả cho các hoạt động của nhà trường và cộng đồng'
+      ],
+      4: []
+    }},
+    { num: 4, name: 'Hiệu trưởng, phó hiệu trưởng, tổ chuyên môn và tổ văn phòng', levels: {
+      1: [
+        'a) Có hiệu trưởng, số lượng phó hiệu trưởng theo quy định',
+        'b) Tổ chuyên môn và tổ văn phòng có cơ cấu tổ chức theo quy định',
+        'c) Tổ chuyên môn, tổ văn phòng có kế hoạch hoạt động và thực hiện các nhiệm vụ theo quy định'
+      ],
+      2: [
+        'a) Hằng năm, tổ chuyên môn đề xuất và thực hiện được ít nhất 01 (một) chuyên đề chuyên môn có tác dụng nâng cao chất lượng và hiệu quả giáo dục',
+        'b) Hoạt động của tổ chuyên môn, tổ văn phòng được định kỳ rà soát, đánh giá, điều chỉnh'
+      ],
+      3: [
+        'a) Hoạt động của tổ chuyên môn, tổ văn phòng có đóng góp hiệu quả trong việc nâng cao chất lượng các hoạt động của nhà trường',
+        'b) Tổ chuyên môn thực hiện hiệu quả các chuyên đề chuyên môn góp phần nâng cao chất lượng giáo dục'
+      ],
+      4: []
+    }},
+    { num: 5, name: 'Khối lớp và tổ chức lớp học', levels: {
+      1: [
+        'a) Có đủ các khối lớp cấp tiểu học',
+        'b) Học sinh được tổ chức theo lớp học; lớp học được tổ chức theo quy định',
+        'c) Lớp học hoạt động theo nguyên tắc tự quản, dân chủ'
+      ],
+      2: [
+        'a) Trường có không quá 30 (ba mươi) lớp',
+        'b) Sĩ số học sinh trong lớp theo quy định',
+        'c) Tổ chức lớp học linh hoạt và phù hợp với các hình thức hoạt động giáo dục'
+      ],
+      3: [], 4: []
+    }},
+    { num: 6, name: 'Quản lý hành chính, tài chính và tài sản', levels: {
+      1: [
+        'a) Hệ thống hồ sơ của nhà trường được lưu trữ theo quy định',
+        'b) Lập dự toán, thực hiện thu chi, quyết toán, thống kê, báo cáo tài chính và cơ sở vật chất; công khai và định kỳ tự kiểm tra tài chính, tài sản theo quy định; quy chế chi tiêu nội bộ được bổ sung, cập nhật phù hợp với điều kiện thực tế và các quy định hiện hành',
+        'c) Quản lý, sử dụng tài chính, tài sản đúng mục đích và có hiệu quả để phục vụ các hoạt động giáo dục'
+      ],
+      2: [
+        'a) Ứng dụng công nghệ thông tin trong công tác quản lý hành chính, tài chính và tài sản của nhà trường',
+        'b) Trong 05 năm liên tiếp tính đến thời điểm đánh giá, không có vi phạm liên quan đến việc quản lý hành chính, tài chính và tài sản theo kết luận của thanh tra, kiểm toán'
+      ],
+      3: ['Có kế hoạch dài hạn, trung hạn và ngắn hạn để tạo các nguồn tài chính hợp pháp phù hợp với điều kiện nhà trường, thực tế địa phương'],
+      4: []
+    }},
+    { num: 7, name: 'Quản lý cán bộ, giáo viên và nhân viên', levels: {
+      1: [
+        'a) Có kế hoạch bồi dưỡng chuyên môn, nghiệp vụ cho đội ngũ cán bộ quản lý, giáo viên và nhân viên',
+        'b) Phân công, sử dụng cán bộ quản lý, giáo viên, nhân viên rõ ràng, hợp lý đảm bảo hiệu quả các hoạt động của nhà trường',
+        'c) Cán bộ quản lý, giáo viên và nhân viên được đảm bảo các quyền theo quy định'
+      ],
+      2: ['Có các biện pháp để phát huy năng lực của cán bộ quản lý, giáo viên, nhân viên trong việc xây dựng, phát triển và nâng cao chất lượng giáo dục nhà trường'],
+      3: [], 4: []
+    }},
+    { num: 8, name: 'Quản lý các hoạt động giáo dục', levels: {
+      1: [
+        'a) Kế hoạch giáo dục phù hợp với quy định hiện hành, điều kiện thực tế địa phương và điều kiện của nhà trường',
+        'b) Kế hoạch giáo dục được thực hiện đầy đủ',
+        'c) Kế hoạch giáo dục được rà soát, đánh giá, điều chỉnh kịp thời'
+      ],
+      2: ['Các biện pháp chỉ đạo, kiểm tra, đánh giá của nhà trường đối với các hoạt động giáo dục, được cơ quan quản lý đánh giá đạt hiệu quả'],
+      3: [], 4: []
+    }},
+    { num: 9, name: 'Thực hiện quy chế dân chủ cơ sở', levels: {
+      1: [
+        'a) Cán bộ quản lý, giáo viên, nhân viên được tham gia thảo luận, đóng góp ý kiến khi xây dựng kế hoạch, nội quy, quy định, quy chế liên quan đến các hoạt động của nhà trường',
+        'b) Các khiếu nại, tố cáo, kiến nghị, phản ánh (nếu có) thuộc thẩm quyền xử lý của nhà trường được giải quyết đúng pháp luật',
+        'c) Hằng năm, có báo cáo thực hiện quy chế dân chủ cơ sở'
+      ],
+      2: ['Các biện pháp và cơ chế giám sát việc thực hiện quy chế dân chủ cơ sở đảm bảo công khai, minh bạch, hiệu quả'],
+      3: [], 4: []
+    }},
+    { num: 10, name: 'Đảm bảo an ninh trật tự, an toàn trường học', levels: {
+      1: [
+        'a) Có phương án đảm bảo an ninh trật tự; vệ sinh an toàn thực phẩm; an toàn phòng, chống tai nạn, thương tích; an toàn phòng, chống cháy, nổ; an toàn phòng, chống thảm họa, thiên tai; phòng, chống dịch bệnh; phòng, chống tệ nạn xã hội và phòng, chống bạo lực trong nhà trường; những trường có tổ chức bếp ăn cho học sinh được cấp giấy chứng nhận đủ điều kiện an toàn thực phẩm',
+        'b) Có hộp thư góp ý, đường dây nóng và các hình thức khác để tiếp nhận, xử lý các thông tin phản ánh của người dân; đảm bảo an toàn cho cán bộ quản lý, giáo viên, nhân viên và học sinh trong nhà trường',
+        'c) Không có hiện tượng kỳ thị, hành vi bạo lực, vi phạm pháp luật về bình đẳng giới trong nhà trường'
+      ],
+      2: [
+        'a) Cán bộ quản lý, giáo viên, nhân viên và học sinh được phổ biến, hướng dẫn, thực hiện phương án đảm bảo an ninh trật tự; vệ sinh an toàn thực phẩm; an toàn phòng, chống tai nạn, thương tích; an toàn phòng, chống cháy, nổ; an toàn phòng, chống thảm họa, thiên tai; phòng, chống dịch bệnh; phòng, chống các tệ nạn xã hội và phòng, chống bạo lực trong nhà trường',
+        'b) Nhà trường thường xuyên kiểm tra, thu thập, đánh giá, xử lý các thông tin, biểu hiện liên quan đến bạo lực học đường, an ninh trật tự và có biện pháp ngăn chặn kịp thời, hiệu quả'
+      ],
+      3: [], 4: []
+    }}
+  ]},
+  { id: 2, name: 'Cán bộ quản lý, giáo viên, nhân viên và học sinh', refs: 'TT 17/2018 Điều 8, 13, 18', criteria: [
+    { num: 1, name: 'Đối với hiệu trưởng, phó hiệu trưởng', levels: {
+      1: [
+        'a) Đạt tiêu chuẩn theo quy định',
+        'b) Được đánh giá đạt chuẩn hiệu trưởng trở lên',
+        'c) Được bồi dưỡng, tập huấn về chuyên môn, nghiệp vụ quản lý giáo dục theo quy định'
+      ],
+      2: [
+        'a) Trong 05 năm liên tiếp tính đến thời điểm đánh giá, có ít nhất 02 năm được đánh giá đạt chuẩn hiệu trưởng ở mức khá trở lên',
+        'b) Được bồi dưỡng, tập huấn về lý luận chính trị theo quy định; được giáo viên, nhân viên trong trường tín nhiệm'
+      ],
+      3: ['Trong 05 năm liên tiếp tính đến thời điểm đánh giá, đạt chuẩn hiệu trưởng ở mức khá trở lên, trong đó có ít nhất 01 năm đạt chuẩn hiệu trưởng ở mức tốt'],
+      4: []
+    }},
+    { num: 2, name: 'Đối với giáo viên', levels: {
+      1: [
+        'a) Số lượng giáo viên đảm bảo để dạy các môn học và tổ chức các hoạt động giáo dục theo quy định của Chương trình giáo dục phổ thông cấp tiểu học; có giáo viên làm Tổng phụ trách Đội Thiếu niên tiền phong Hồ Chí Minh',
+        'b) 100% giáo viên đạt chuẩn trình độ đào tạo theo quy định',
+        'c) Có ít nhất 95% giáo viên đạt chuẩn nghề nghiệp giáo viên ở mức đạt trở lên'
+      ],
+      2: [
+        'a) Tỷ lệ giáo viên đạt trên chuẩn trình độ đào tạo đạt ít nhất 55%; đối với các trường thuộc vùng khó khăn đạt ít nhất 40%; trong 05 năm liên tiếp tính đến thời điểm đánh giá, tỷ lệ giáo viên trên chuẩn trình độ đào tạo được duy trì ổn định và tăng dần theo lộ trình phù hợp',
+        'b) Trong 05 năm liên tiếp tính đến thời điểm đánh giá, có 100% giáo viên đạt chuẩn nghề nghiệp giáo viên ở mức đạt trở lên, trong đó có ít nhất 60% đạt chuẩn nghề nghiệp giáo viên ở mức khá trở lên và có ít nhất 50% ở mức khá trở lên đối với trường thuộc vùng khó khăn',
+        'c) Trong 05 năm liên tiếp tính đến thời điểm đánh giá, không có giáo viên bị kỷ luật từ hình thức cảnh cáo trở lên'
+      ],
+      3: [
+        'a) Tỷ lệ giáo viên đạt trên chuẩn trình độ đào tạo đạt ít nhất 65%, đối với các trường thuộc vùng khó khăn đạt ít nhất 50%',
+        'b) Trong 05 năm liên tiếp tính đến thời điểm đánh giá, có ít nhất 80% giáo viên đạt chuẩn nghề nghiệp giáo viên ở mức khá trở lên, trong đó có ít nhất 30% đạt chuẩn nghề nghiệp giáo viên ở mức tốt; đối với trường thuộc vùng khó khăn có ít nhất 70% đạt chuẩn nghề nghiệp giáo viên ở mức khá trở lên, trong đó có ít nhất 20% đạt chuẩn nghề nghiệp giáo viên ở mức tốt'
+      ],
+      4: ['(TT 22/2024, Điều 22 khoản 6 bổ sung) Tỷ lệ giáo viên đạt trên chuẩn trình độ đào tạo đạt ít nhất 20%; trong 05 năm liên tiếp tính đến thời điểm đánh giá có 100% giáo viên đạt chuẩn nghề nghiệp từ mức khá trở lên, trong đó có ít nhất 70% giáo viên đạt chuẩn nghề nghiệp giáo viên đạt mức tốt']
+    }},
+    { num: 3, name: 'Đối với nhân viên', levels: {
+      1: [
+        'a) Có nhân viên hoặc giáo viên kiêm nhiệm để đảm nhiệm các nhiệm vụ do hiệu trưởng phân công',
+        'b) Được phân công công việc phù hợp, hợp lý theo năng lực',
+        'c) Hoàn thành các nhiệm vụ được giao'
+      ],
+      2: [
+        'a) Số lượng và cơ cấu nhân viên đảm bảo theo quy định',
+        'b) Trong 05 năm liên tiếp tính đến thời điểm đánh giá, không có nhân viên bị kỷ luật từ hình thức cảnh cáo trở lên'
+      ],
+      3: [
+        'a) Có trình độ đào tạo đáp ứng được vị trí việc làm',
+        'b) Hằng năm, được tham gia đầy đủ các khóa, lớp tập huấn, bồi dưỡng chuyên môn, nghiệp vụ theo vị trí việc làm'
+      ],
+      4: []
+    }},
+    { num: 4, name: 'Đối với học sinh', levels: {
+      1: [
+        'a) Đảm bảo về tuổi học sinh tiểu học theo quy định',
+        'b) Thực hiện các nhiệm vụ theo quy định',
+        'c) Được đảm bảo các quyền theo quy định'
+      ],
+      2: ['Học sinh vi phạm các hành vi không được làm được phát hiện kịp thời, được áp dụng các biện pháp giáo dục phù hợp và có chuyển biến tích cực'],
+      3: ['Học sinh có thành tích trong học tập, rèn luyện có ảnh hưởng tích cực đến các hoạt động của lớp và nhà trường'],
+      4: []
+    }}
+  ]},
+  { id: 3, name: 'Cơ sở vật chất và thiết bị dạy học', refs: 'TT 17/2018 Điều 9 (viết lại bởi TT 22/2024)', criteria: [
+    { num: 1, name: 'Địa điểm, quy mô, diện tích (TT 22/2024 — Điều 9 viết lại)', levels: {
+      1: [
+        'a) Vị trí đặt trường, điểm trường phù hợp với quy hoạch phát triển giáo dục của địa phương, đảm bảo các yêu cầu về an toàn, thuận tiện cho học sinh đến trường',
+        'b) Quy mô trường/lớp/học sinh đảm bảo theo tiêu chuẩn cơ sở vật chất tối thiểu do Bộ GD&ĐT quy định (TT 13/2020 sửa đổi bởi TT 23/2024)',
+        'c) Diện tích khu đất xây dựng trường, điểm trường; diện tích sàn xây dựng các hạng mục công trình đảm bảo theo tiêu chuẩn tối thiểu'
+      ],
+      2: ['Địa điểm, quy mô, diện tích đảm bảo theo tiêu chuẩn cơ sở vật chất mức độ 2 (TT 13/2020 sửa đổi bởi TT 23/2024)'],
+      3: [], 4: []
+    }},
+    { num: 2, name: 'Các hạng mục công trình đảm bảo tiêu chuẩn cơ sở vật chất tối thiểu (TT 22/2024 — Điều 9 viết lại)', levels: {
+      1: [
+        'a) Khối phòng hành chính quản trị đảm bảo các yêu cầu tối thiểu (phòng hiệu trưởng, phòng phó hiệu trưởng, phòng họp, phòng hành chính, phòng y tế, phòng bảo vệ)',
+        'b) Khối phòng học tập (phòng học các lớp); khối phòng hỗ trợ học tập (phòng giáo dục nghệ thuật, phòng học tin học, phòng thiết bị giáo dục, phòng đa chức năng, thư viện, phòng hỗ trợ học sinh có hoàn cảnh khó khăn/năng khiếu)',
+        'c) Khối phụ trợ; khu sân chơi, thể dục thể thao; khối phục vụ sinh hoạt (khu nhà ăn, bếp, khu vệ sinh, khu để xe) đảm bảo an toàn, vệ sinh'
+      ],
+      2: ['Các hạng mục công trình đảm bảo theo tiêu chuẩn cơ sở vật chất mức độ 2, bao gồm đầy đủ các phòng chức năng nâng cao và khu sinh hoạt chuyên biệt'],
+      3: [], 4: []
+    }},
+    { num: 3, name: 'Hạ tầng kỹ thuật, các hạng mục công trình kiên cố và thiết bị dạy học (TT 22/2024 — Điều 9 viết lại)', levels: {
+      1: [
+        'a) Hạ tầng kỹ thuật đảm bảo: hệ thống cấp nước sạch; hệ thống cấp điện; hệ thống phòng cháy, chữa cháy; hạ tầng công nghệ thông tin, liên lạc và khu thu gom rác thải đáp ứng yêu cầu tối thiểu',
+        'b) Tỷ lệ các hạng mục công trình kiên cố đạt yêu cầu tối thiểu theo quy định',
+        'c) Thiết bị dạy học đảm bảo tối thiểu theo Danh mục thiết bị dạy học tối thiểu cấp tiểu học do Bộ GD&ĐT ban hành'
+      ],
+      2: [
+        'a) Hạ tầng CNTT đáp ứng công tác quản lý và dạy học (có phòng học tin học đủ máy, kết nối Internet ổn định)',
+        'b) Tỷ lệ các hạng mục công trình kiên cố đạt mức độ 2 theo quy định',
+        'c) Thiết bị dạy học đầy đủ, được sử dụng hiệu quả; hằng năm được bổ sung thiết bị dạy học và thiết bị dạy học tự làm'
+      ],
+      3: ['Thiết bị dạy học, thiết bị dạy học tự làm được khai thác, sử dụng hiệu quả đáp ứng yêu cầu đổi mới nội dung, phương pháp dạy học và nâng cao chất lượng giáo dục của nhà trường'],
+      4: ['(TT 17/2018, Điều 22 khoản 3) Thư viện có hệ thống hạ tầng công nghệ thông tin hiện đại, có kết nối Internet đáp ứng yêu cầu các hoạt động của nhà trường; có nguồn tài liệu truyền thống và tài liệu số phong phú đáp ứng yêu cầu các hoạt động nhà trường']
+    }}
+  ]},
+  { id: 4, name: 'Quan hệ giữa nhà trường, gia đình và xã hội', refs: 'TT 17/2018 Điều 10, 15, 20', criteria: [
+    { num: 1, name: 'Ban đại diện cha mẹ học sinh', levels: {
+      1: [
+        'a) Được thành lập và hoạt động theo quy định tại Điều lệ Ban đại diện cha mẹ học sinh',
+        'b) Có kế hoạch hoạt động theo năm học',
+        'c) Tổ chức thực hiện kế hoạch hoạt động đúng tiến độ'
+      ],
+      2: ['Phối hợp có hiệu quả với nhà trường trong việc tổ chức thực hiện nhiệm vụ năm học và các hoạt động giáo dục; hướng dẫn, tuyên truyền, phổ biến pháp luật, chủ trương chính sách về giáo dục đối với cha mẹ học sinh; huy động học sinh đến trường, vận động học sinh đã bỏ học trở lại lớp'],
+      3: ['Phối hợp có hiệu quả với nhà trường, xã hội trong việc thực hiện các nhiệm vụ theo quy định của Điều lệ Ban đại diện cha mẹ học sinh'],
+      4: []
+    }},
+    { num: 2, name: 'Công tác tham mưu cấp ủy đảng, chính quyền và phối hợp với các tổ chức, cá nhân của nhà trường', levels: {
+      1: [
+        'a) Tham mưu cấp ủy đảng, chính quyền để thực hiện kế hoạch giáo dục của nhà trường',
+        'b) Tuyên truyền nâng cao nhận thức và trách nhiệm của cộng đồng về chủ trương, chính sách của Đảng, Nhà nước, ngành Giáo dục; về mục tiêu, nội dung và kế hoạch giáo dục của nhà trường',
+        'c) Huy động và sử dụng các nguồn lực hợp pháp của các tổ chức, cá nhân đúng quy định'
+      ],
+      2: [
+        'a) Tham mưu cấp ủy đảng, chính quyền để tạo điều kiện cho nhà trường thực hiện phương hướng, chiến lược xây dựng và phát triển',
+        'b) Phối hợp với các tổ chức, đoàn thể, cá nhân để giáo dục truyền thống lịch sử, văn hóa, đạo đức lối sống, pháp luật, nghệ thuật, thể dục thể thao và các nội dung giáo dục khác cho học sinh; chăm sóc di tích lịch sử, cách mạng, công trình văn hóa; chăm sóc gia đình thương binh, liệt sĩ, gia đình có công với cách mạng, Bà mẹ Việt Nam anh hùng ở địa phương'
+      ],
+      3: ['Tham mưu cấp ủy đảng, chính quyền và phối hợp có hiệu quả với các tổ chức, cá nhân xây dựng nhà trường trở thành trung tâm văn hóa, giáo dục của địa phương'],
+      4: []
+    }}
+  ]},
+  { id: 5, name: 'Hoạt động giáo dục và kết quả giáo dục', refs: 'TT 17/2018 Điều 11, 16, 21', criteria: [
+    { num: 1, name: 'Kế hoạch giáo dục của nhà trường (TT 22/2024 — đổi tên và chỉnh chỉ báo)', levels: {
+      1: [
+        'a) Đảm bảo thực hiện đúng, đủ Chương trình giáo dục phổ thông cấp tiểu học và các quy định về chuyên môn của cơ quan quản lý nhà nước về giáo dục',
+        'b) Đảm bảo đáp ứng mục tiêu, yêu cầu của chương trình giáo dục, nhu cầu của học sinh và phù hợp với điều kiện thực tế của nhà trường, đảm bảo chất lượng, hiệu quả',
+        'c) Giải trình khi cơ quan có thẩm quyền yêu cầu và được cơ quan có thẩm quyền xác nhận; thực hiện đầy đủ và rà soát, đánh giá, điều chỉnh kịp thời'
+      ],
+      2: [
+        'a) Đảm bảo tính cập nhật các quy định về chuyên môn của cơ quan quản lý giáo dục',
+        'b) Được phổ biến, công khai để giáo viên, học sinh, cha mẹ học sinh, cộng đồng biết và phối hợp, giám sát nhà trường thực hiện kế hoạch'
+      ],
+      3: [],
+      4: ['(TT 17/2018, Điều 22 khoản 1) Kế hoạch giáo dục của nhà trường có những nội dung được tham khảo Chương trình giáo dục tiên tiến của các nước trong khu vực và thế giới đúng quy định, phù hợp, hiệu quả và góp phần nâng cao chất lượng giáo dục']
+    }},
+    { num: 2, name: 'Thực hiện Chương trình giáo dục phổ thông cấp tiểu học', levels: {
+      1: [
+        'a) Tổ chức dạy học đúng, đủ các môn học và các hoạt động giáo dục đảm bảo mục tiêu giáo dục',
+        'b) Vận dụng các phương pháp, kỹ thuật dạy học, tổ chức hoạt động dạy học đảm bảo mục tiêu, nội dung giáo dục, phù hợp đối tượng học sinh và điều kiện nhà trường',
+        'c) Thực hiện đúng quy định về đánh giá học sinh tiểu học'
+      ],
+      2: [
+        'a) Thực hiện đúng chương trình, kế hoạch giáo dục; lựa chọn nội dung, thời lượng, phương pháp, hình thức dạy học phù hợp với từng đối tượng và đáp ứng yêu cầu, khả năng nhận thức của học sinh',
+        'b) Phát hiện và bồi dưỡng học sinh có năng khiếu, phụ đạo học sinh gặp khó khăn trong học tập, rèn luyện'
+      ],
+      3: ['Hằng năm, rà soát, phân tích, đánh giá hiệu quả và tác động các biện pháp, giải pháp tổ chức các hoạt động giáo dục nhằm nâng cao chất lượng dạy học của giáo viên, học sinh'],
+      4: []
+    }},
+    { num: 3, name: 'Thực hiện các hoạt động giáo dục khác', levels: {
+      1: [
+        'a) Đảm bảo theo kế hoạch',
+        'b) Nội dung và hình thức tổ chức các hoạt động phong phú, phù hợp điều kiện của nhà trường',
+        'c) Đảm bảo cho tất cả học sinh được tham gia'
+      ],
+      2: ['Được tổ chức có hiệu quả, tạo cơ hội cho học sinh tham gia tích cực, chủ động, sáng tạo'],
+      3: ['Nội dung và hình thức tổ chức các hoạt động phân hóa theo nhu cầu, năng lực, sở trường của học sinh'],
+      4: ['(TT 17/2018, Điều 22 khoản 2) Đảm bảo 100% cho học sinh có hoàn cảnh khó khăn, học sinh có năng khiếu hoàn thành mục tiêu giáo dục dành cho từng cá nhân với sự tham gia của nhà trường, các tổ chức, cá nhân liên quan']
+    }},
+    { num: 4, name: 'Công tác phổ cập giáo dục tiểu học', levels: {
+      1: [
+        'a) Thực hiện nhiệm vụ phổ cập giáo dục theo phân công',
+        'b) Trong địa bàn tuyển sinh của trường tỷ lệ trẻ em 6 tuổi vào lớp 1 đạt ít nhất 90%',
+        'c) Quản lý hồ sơ, số liệu phổ cập giáo dục tiểu học đúng quy định'
+      ],
+      2: ['Trong địa bàn tuyển sinh của trường tỷ lệ trẻ 6 tuổi vào lớp 1 đạt ít nhất 95%'],
+      3: ['Trong địa bàn tuyển sinh của trường tỷ lệ trẻ 6 tuổi vào lớp 1 đạt ít nhất 98%'],
+      4: []
+    }},
+    { num: 5, name: 'Kết quả giáo dục', levels: {
+      1: [
+        'a) (TT 22/2024 cập nhật) Tỷ lệ học sinh hoàn thành chương trình lớp học đạt ít nhất 90%',
+        'b) (TT 22/2024 cập nhật) Tỷ lệ trẻ em 11 tuổi hoàn thành chương trình tiểu học đạt ít nhất 85%, đối với trường thuộc xã có điều kiện kinh tế - xã hội đặc biệt khó khăn đạt ít nhất 75%',
+        'c) Tỷ lệ trẻ em đến 14 tuổi hoàn thành chương trình tiểu học đạt ít nhất 80%, đối với trường thuộc xã có điều kiện kinh tế - xã hội đặc biệt khó khăn đạt ít nhất 70%'
+      ],
+      2: [
+        'a) Tỷ lệ học sinh hoàn thành chương trình lớp học đạt ít nhất 85%',
+        'b) Tỷ lệ trẻ em 11 tuổi hoàn thành chương trình tiểu học đạt ít nhất 80%, đối với trường thuộc xã có điều kiện kinh tế - xã hội đặc biệt khó khăn đạt ít nhất 70%; các trẻ em 11 tuổi còn lại đều đang học các lớp tiểu học'
+      ],
+      3: [
+        'a) Tỷ lệ học sinh hoàn thành chương trình lớp học đạt ít nhất 95%',
+        'b) Tỷ lệ trẻ em 11 tuổi hoàn thành chương trình tiểu học đạt ít nhất 90%, đối với trường thuộc xã có điều kiện kinh tế - xã hội đặc biệt khó khăn đạt ít nhất 80%; các trẻ em 11 tuổi còn lại đều đang học các lớp tiểu học'
+      ],
+      4: ['(TT 22/2024, Điều 22 khoản 7 bổ sung) Tỷ lệ học sinh hoàn thành chương trình lớp học đạt ít nhất 97%; tỷ lệ trẻ em đến 14 tuổi hoàn thành chương trình tiểu học đạt 100%']
+    }}
+  ]}
+];
+
+const DEFAULT_EVIDENCE_HINTS = `[H1-1.1-01] Kế hoạch chiến lược phát triển nhà trường 2021-2025
+[H1-1.1-02] Quyết định phê duyệt kế hoạch chiến lược của UBND xã
+[H1-1.2-01] Quyết định thành lập Hội đồng trường
+[H1-1.3-01] Quyết định thành lập Chi bộ Đảng; danh sách đoàn thể
+[H1-1.4-01] Quyết định bổ nhiệm Hiệu trưởng, Phó Hiệu trưởng
+[H1-1.4-02] Quyết định thành lập tổ chuyên môn, tổ văn phòng
+[H1-1.5-01] Danh sách lớp, sĩ số học sinh theo khối lớp
+[H1-1.6-01] Hệ thống hồ sơ tài chính, sổ sách theo quy định
+[H1-1.7-01] Kế hoạch bồi dưỡng chuyên môn, nghiệp vụ CBQL-GV-NV
+[H1-1.8-01] Kế hoạch giáo dục năm học; nghị quyết hội đồng trường
+[H1-1.9-01] Báo cáo thực hiện quy chế dân chủ cơ sở hằng năm
+[H1-1.10-01] Phương án an ninh, an toàn trường học; giấy chứng nhận PCCC
+[H2-2.1-01] Hồ sơ nhân sự Hiệu trưởng, Phó Hiệu trưởng
+[H2-2.1-02] Kết quả đánh giá chuẩn Hiệu trưởng 05 năm gần nhất
+[H2-2.2-01] Danh sách giáo viên, trình độ đào tạo, chuẩn nghề nghiệp
+[H2-2.2-02] Quyết định công nhận giáo viên Tổng phụ trách Đội
+[H2-2.3-01] Danh sách nhân viên, trình độ, vị trí việc làm
+[H2-2.4-01] Danh sách học sinh theo độ tuổi; sổ chủ nhiệm
+[H3-3.1-01] Giấy chứng nhận quyền sử dụng đất; bản vẽ tổng mặt bằng
+[H3-3.2-01] Danh mục các khối phòng, phòng chức năng của trường
+[H3-3.3-01] Hồ sơ hạ tầng kỹ thuật (điện, nước, PCCC, CNTT)
+[H3-3.3-02] Danh mục thiết bị dạy học tối thiểu
+[H4-4.1-01] Quyết định thành lập Ban đại diện cha mẹ học sinh; kế hoạch hoạt động
+[H4-4.2-01] Biên bản tham mưu cấp ủy, chính quyền về giáo dục
+[H5-5.1-01] Kế hoạch giáo dục của nhà trường (theo Chương trình GDPT 2018)
+[H5-5.2-01] Kế hoạch dạy học các môn học; thời khóa biểu
+[H5-5.2-02] Hồ sơ đánh giá học sinh (theo TT 27/2020 hoặc TT 22/2021)
+[H5-5.3-01] Kế hoạch tổ chức hoạt động trải nghiệm, hoạt động giáo dục ngoài giờ
+[H5-5.4-01] Báo cáo công tác phổ cập giáo dục tiểu học; số liệu tỷ lệ trẻ vào lớp 1
+[H5-5.5-01] Báo cáo kết quả giáo dục năm học; tỷ lệ hoàn thành chương trình
+[H6-6.1-01] Báo cáo tự đánh giá các năm trước (nếu có)
+[H6-6.2-01] Biên bản họp Hội đồng tự đánh giá
+[H6-6.3-01] Bảng mã hóa minh chứng`;
+
+/* ============================================================
+   STORAGE · API · SANITIZE
+============================================================ */
+
+const LS_KEY = 'tdgth_draft_v1';
+const LS_SETTINGS = 'tdgth_settings_v1';
+const LS_UI = 'tdgth_ui_v1';
+
+// URL backend Apps Script hard-coded — user không cần cấu hình.
+const DEFAULT_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxXuiJdn26TK7lYlzVEam3nJIh77kAn1WJpIjWMxWHMIM7SF3uirJd14hqWQut9f4Ml/exec';
+
+const loadLS = (k, fb = null) => { try { return JSON.parse(localStorage.getItem(k)) ?? fb; } catch { return fb; } };
+const saveLS = (k, v) => localStorage.setItem(k, JSON.stringify(v));
+
+/* Mẫu Hội đồng TĐG chuẩn theo Công văn 5932/BGDĐT-QLCL + thực tế trường TH
+   User có thể thêm/bớt thành viên trong SchoolInfoModal. */
+const DEFAULT_COUNCIL = [
+  { name: '', role: 'Chủ tịch Hội đồng',      position: 'Hiệu trưởng' },
+  { name: '', role: 'Phó Chủ tịch Hội đồng',  position: 'Phó Hiệu trưởng' },
+  { name: '', role: 'Thư ký Hội đồng',        position: 'Thư ký Hội đồng trường' },
+  { name: '', role: 'Ủy viên',                position: 'Chủ tịch Công đoàn' },
+  { name: '', role: 'Ủy viên',                position: 'Bí thư Chi đoàn Thanh niên CSHCM' },
+  { name: '', role: 'Ủy viên',                position: 'Tổng phụ trách Đội TNTP HCM' },
+  { name: '', role: 'Ủy viên',                position: 'Tổ trưởng Tổ khối 1' },
+  { name: '', role: 'Ủy viên',                position: 'Tổ trưởng Tổ khối 2' },
+  { name: '', role: 'Ủy viên',                position: 'Tổ trưởng Tổ khối 3' },
+  { name: '', role: 'Ủy viên',                position: 'Tổ trưởng Tổ khối 4' },
+  { name: '', role: 'Ủy viên',                position: 'Tổ trưởng Tổ khối 5' },
+  { name: '', role: 'Ủy viên',                position: 'Tổ trưởng Tổ Tiếng Anh' },
+  { name: '', role: 'Ủy viên',                position: 'Tổ trưởng Tổ Văn phòng' }
+];
+
+/* Mẫu bảng số liệu 5 năm gần nhất (Phần I — Cơ sở dữ liệu).
+   Empty values → user điền sau trong YearlyDataModal hoặc AI sẽ ghi [CẦN BỔ SUNG]. */
+const emptyYearlyRow = () => ({ k1:'', k2:'', k3:'', k4:'', k5:'', total:'' });
+
+const emptyReport = () => {
+  const curYear = new Date().getFullYear();
+  return {
+    schoolInfo: {
+      name: '', type: 'tieuhoc', address: '', ward: '', province: '',
+      principal: '', phone: '', email: '', website: '',
+      academicYearFrom: curYear - 1,
+      academicYearTo: curYear,
+      establishedYear: '', tdgCadre: '',
+      numStudents: '', numClasses: '', numTeachers: '', numStaff: '',
+      isVungKhoKhan: false,
+      mucDangKy: 2,
+      council: DEFAULT_COUNCIL.map(m => ({ ...m }))
+    },
+    sources: {
+      oldReport: '',
+      evidenceList: DEFAULT_EVIDENCE_HINTS,
+      driveLinks: []
+    },
+    generated: {},
+    reportId: '',
+    savedAt: null
+  };
+};
+
+/* Trích "Đạt Mức X" / "Không đạt" từ nội dung tự đánh giá của tiêu chí.
+   Trả về: null (chưa tạo/không tìm thấy) | 0 (không đạt) | 1/2/3/4 (Đạt Mức). */
+const extractSelfAssessLevel = (content) => {
+  if (!content) return null;
+  // Ưu tiên tìm trong phần "5. Tự đánh giá" (block cuối)
+  const blocks = content.split(/\*\*\s*5[.\s]*Tự\s*đánh\s*giá\s*\**/i);
+  const text = blocks.length > 1 ? blocks[blocks.length - 1].slice(0, 400) : content.slice(-400);
+  if (/không\s*đạt/i.test(text)) {
+    // Check xem có "Đạt Mức" không — nếu có thì không phải "không đạt"
+    if (!/\bĐạt\s*Mức\s*\d/i.test(text)) return 0;
+  }
+  const m = text.match(/Đạt\s*Mức\s*(\d)/i) || text.match(/Mức\s*(\d)\b/i);
+  return m ? parseInt(m[1]) : null;
+};
+
+const genReportId = (info) => {
+  const safe = (s) => String(s || 'Truong').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[đĐ]/g, 'd').replace(/[^a-zA-Z0-9]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
+  return `TDGTH_${safe(info.name)}_${info.academicYearFrom}-${info.academicYearTo}_${Date.now().toString(36)}`;
+};
+
+const callBackend = async (url, body) => {
+  if (!url) throw new Error('Chưa cấu hình URL Apps Script backend.');
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify(body),
+    redirect: 'follow'
+  });
+  if (!res.ok) throw new Error('Kết nối backend thất bại: HTTP ' + res.status);
+  const data = await res.json();
+  if (!data.ok) throw new Error(data.error || 'Backend trả về lỗi không xác định');
+  return data;
+};
+
+function sanitize(s) {
+  if (!s) return '';
+  let t = String(s).trim();
+  const preambles = [
+    /^[\s\S]{0,400}?(?:Chắc chắn rồi|Được thôi|Vâng|Dạ)[.,:!\s]+/i,
+    /^(?:Đây là|Dưới đây là|Sau đây là)\s+(?:dự thảo|nội dung|phần|bản|báo cáo)[^.\n]{0,200}\.\s*/i,
+    /^Tôi (?:sẽ|xin) (?:viết|soạn|trình bày)[^.\n]{0,200}\.\s*/i
+  ];
+  for (const p of preambles) { const m = t.match(p); if (m && m[0].length < 500) t = t.replace(p, '').trim(); }
+  t = t.replace(/^#{1,6}\s*\**\s*(?:PHẦN\s+[IVX]+[.:\s]*)?BÁO\s*CÁO\s*TỰ\s*ĐÁNH\s*GIÁ\**\s*$/gim, '');
+  t = t.replace(/^\**\s*Năm\s*học\s*:\s*\d{4}\s*[-–]\s*\d{4}\s*\**\s*\.?\s*$/gim, '');
+  t = t.replace(/^\s*Trường\s*(Tiểu học|Mầm non|THCS|THPT)\s*[:.][^\n]*$/gim, '');
+  t = t.replace(/^\*\*\s*Trường\s*(Tiểu học|Mầm non|THCS|THPT)\b[^\n]*\*\*\s*\.?\s*$/gim, '');
+  t = t.replace(/^\s*[-*_]{3,}\s*$/gm, '');
+  t = t.replace(/```[\s\S]*?```/g, s => s.replace(/```/g, ''));
+  t = t.replace(/\n{3,}/g, '\n\n');
+  return t.trim();
+}
+
+/* ============================================================
+   PROMPTS
+============================================================ */
+const fmtSchool = (info) => {
+  const yr = `${info.academicYearFrom}-${info.academicYearTo}`;
+  const addr = [info.address, info.ward, info.province].filter(Boolean).join(', ');
+  return `THÔNG TIN TRƯỜNG:
+- Tên trường: ${info.name || '[chưa đặt tên]'}
+- Địa chỉ: ${addr || '[chưa có]'}
+- Hiệu trưởng: ${info.principal || '[chưa có]'}
+- Năm học đánh giá: ${yr}
+- Năm thành lập: ${info.establishedYear || 'chưa rõ'}
+- Vùng khó khăn: ${info.isVungKhoKhan ? 'CÓ (áp tỷ lệ % vùng khó khăn khi đối chiếu chỉ báo 2.2 và 5.5)' : 'Không'}
+- Quy mô: ${info.numClasses || '?'} lớp, ${info.numStudents || '?'} học sinh, ${info.numTeachers || '?'} GV, ${info.numStaff || '?'} NV.
+- Mức đăng ký đánh giá: Mức ${info.mucDangKy || 2}.`;
+};
+
+const systemPromptBase = (info) => `Bạn là chuyên gia KĐCLGD cấp Tiểu học am hiểu:
+- Thông tư 17/2018/TT-BGDĐT ngày 22/8/2018 (quy định KĐCLGD & công nhận đạt chuẩn QG trường tiểu học).
+- **Thông tư 22/2024/TT-BGDĐT ngày 10/12/2024** (hiệu lực 25/01/2025) — SỬA Điều 9 (Tiêu chuẩn 3 CHỈ CÒN 3 TIÊU CHÍ: 3.1, 3.2, 3.3); đổi tên Tiêu chí 1.2, 5.1; chỉnh Tiêu chí 5.5 Mức 1; bổ sung Điều 22 khoản 6, 7.
+- Công văn 5932/BGDĐT-QLCL ngày 28/12/2018 — hướng dẫn tự đánh giá cơ sở giáo dục phổ thông (quy trình 7 bước).
+- Thông tư 13/2020/TT-BGDĐT (sửa bởi TT 23/2024) — tiêu chuẩn CSVC.
+
+🛑 CẤU TRÚC HÀNH CHÍNH MỚI (BẮT BUỘC):
+Việt Nam hiện chỉ có 2 cấp hành chính: **cấp xã/phường** và **cấp tỉnh/thành phố**. KHÔNG còn cấp huyện/quận, KHÔNG còn Phòng Giáo dục và Đào tạo. Quản lý trực tiếp trường tiểu học là **UBND cấp xã** và **Sở GD&ĐT cấp tỉnh**.
+- TUYỆT ĐỐI KHÔNG viết các cụm: "Phòng GD&ĐT", "Phòng GDĐT", "Phòng Giáo dục và Đào tạo", "PGD", "UBND Huyện", "UBND Quận", "Huyện …".
+- Nếu tư liệu đầu vào cũ còn các cụm này → LƯỢC BỎ hoặc THAY THẾ:
+  + "Phòng GD&ĐT phê duyệt" → "UBND xã phê duyệt" hoặc "Sở GD&ĐT phê duyệt" tuỳ ngữ cảnh.
+  + "UBND Huyện X" → "UBND xã Y" hoặc "UBND tỉnh Z".
+- Khi không chắc → ghi [CẦN BỔ SUNG — rà soát văn bản cũ].
+
+⚠ ĐỊNH DẠNG PHẢN HỒI BẮT BUỘC:
+1. KHÔNG mở đầu bằng lời xã giao ("Chắc chắn rồi", "Dưới đây là...", "Tôi sẽ viết..."). BẮT ĐẦU NGAY bằng nội dung chính.
+2. KHÔNG tự thêm tiêu đề tổng "BÁO CÁO TỰ ĐÁNH GIÁ", "Năm học:...", "Trường:..." — hệ thống đã có sẵn.
+3. KHÔNG dùng "---" để phân chia. KHÔNG dùng backtick. KHÔNG dùng ## ### cho heading.
+4. Dùng **in đậm** cho các mục con ("**Mô tả hiện trạng:**"). Dấu đầu dòng "- " cho danh sách. Dấu a) b) c) cho chỉ báo.
+5. KHÔNG tạo bảng markdown.
+6. Ngày tháng văn bản CHÍNH XÁC — KHÔNG bịa: TT 17/2018 (22/8/2018), TT 22/2024 (10/12/2024), CV 5932 (28/12/2018), TT 13/2020 (26/5/2020), TT 23/2024 (10/12/2024).
+
+🔒 CHỈ BÁO ĐƯỢC CUNG CẤP SẴN — KHÔNG TỰ BỊA:
+Hệ thống sẽ truyền NGUYÊN VĂN các chỉ báo a/b/c của từng Mức 1/2/3/4 cho từng tiêu chí trong phần userPrompt. Bạn KHÔNG được "tự nhớ" hay diễn giải lại chỉ báo. KHÔNG thêm chỉ báo không có trong khối được cung cấp. Nhiệm vụ là ĐỐI CHIẾU thực trạng trường với các chỉ báo đó.
+
+QUY TẮC VIẾT:
+1. Văn phong hành chính nhà nước Việt Nam, trang trọng, khách quan, tiếng Việt thuần.
+2. Trích dẫn minh chứng đúng mã [Hx-x.x-xx], ví dụ [H1-1.1-01].
+3. Cấu trúc mỗi tiêu chí: Mức 1 → Mức 2 → Mức 3 (nếu đăng ký cao hơn) → Mức 4 (nếu có) → 1. Mô tả hiện trạng → 2. Điểm mạnh → 3. Điểm yếu → 4. Kế hoạch cải tiến chất lượng → 5. Tự đánh giá.
+4. KHÔNG bịa số liệu. Thiếu dữ liệu thì ghi "[CẦN BỔ SUNG]".
+
+${fmtSchool(info)}`;
+
+const buildUserPrompt = (section, data) => {
+  const { type, meta } = section;
+  const oldRep = data.sources.oldReport ? `\n\n---BÁO CÁO/TƯ LIỆU CŨ (có thể chứa cấu trúc hành chính cũ — hãy lược bỏ/thay thế)---\n${data.sources.oldReport.slice(0, 8000)}\n---HẾT---` : '';
+  const ev = data.sources.evidenceList ? `\n\n---DANH MỤC MINH CHỨNG (dùng đúng mã)---\n${data.sources.evidenceList.slice(0, 6000)}\n---HẾT---` : '';
+
+  if (type === 'coso') {
+    const curTo = data.schoolInfo.academicYearTo || new Date().getFullYear();
+    const yrs = [curTo-4, curTo-3, curTo-2, curTo-1, curTo].map(y => `${y-1}-${y}`).join(' | ');
+    return `Viết PHẦN I: CƠ SỞ DỮ LIỆU của Báo cáo Tự đánh giá trường tiểu học.
+
+NỘI DUNG GỒM:
+
+I. THÔNG TIN CHUNG CỦA NHÀ TRƯỜNG (dạng liệt kê 1., 2., 3...):
+- Tên trường, tên trước đây (nếu có), cơ quan chủ quản (UBND xã), địa chỉ.
+- Điện thoại, email, website (nếu có).
+- Họ tên hiệu trưởng; họ tên cán bộ chuyên trách KĐCLGD.
+- Loại hình trường (công lập/tư thục), năm thành lập, thời gian bắt đầu hoạt động.
+- Đã đạt chuẩn quốc gia Mức mấy, năm nào (nếu có).
+
+II. CƠ CẤU TỔ CHỨC VÀ QUY MÔ (5 NĂM GẦN NHẤT: ${yrs}):
+
+Trình bày theo từng tiểu mục, mỗi tiểu mục kèm BẢNG SỐ LIỆU 5 NĂM. Nếu chưa có số liệu cụ thể năm nào thì ghi [CẦN BỔ SUNG] đúng ô đó.
+
+1. Số lớp học theo khối lớp — bảng có cột: Khối lớp | ${yrs}
+   (liệt kê từ khối 1 → khối 5, hàng cuối "Tổng cộng")
+
+2. Số học sinh theo khối lớp — bảng cùng cấu trúc như mục 1
+
+3. Đội ngũ cán bộ quản lý, giáo viên, nhân viên — bảng có cột: Nội dung | ${yrs}
+   (các hàng: Tổng số CBQL, GV, NV; Số đạt chuẩn trình độ đào tạo; Số trên chuẩn; Số đạt chuẩn nghề nghiệp)
+
+4. Cơ sở vật chất — bảng cùng cấu trúc:
+   (các hàng: Tổng diện tích khu đất (m²); Diện tích sàn xây dựng (m²); Số phòng học; Số phòng chức năng; Số phòng hành chính quản trị; Thư viện/phòng máy tính)
+
+Dùng định dạng bảng markdown với dấu | để hệ thống render ra bảng. Ví dụ:
+| Khối lớp | 2021-2022 | 2022-2023 | 2023-2024 | 2024-2025 | 2025-2026 |
+|---|---|---|---|---|---|
+| Khối 1 | [CẦN BỔ SUNG] | ... |
+
+Độ dài 700-1000 từ. Văn phong hành chính, liệt kê rõ ràng.${oldRep}`;
+  }
+
+  if (type === 'bangtonghop' || type === 'phuluc') {
+    // Các section này được tính tự động (xem extractSelfAssessLevel + renderPhuLuc)
+    // Không gửi prompt cho AI — trả về null từ generateOne.
+    return null;
+  }
+
+  if (type === 'modau') {
+    const { standardId, standardName } = meta;
+    return `Viết đoạn MỞ ĐẦU cho Tiêu chuẩn ${standardId}: ${standardName}.
+
+Đây là đoạn giới thiệu tổng quan đặt trước các tiêu chí (không phải đánh giá cụ thể). Nội dung:
+1. Vai trò, ý nghĩa của Tiêu chuẩn ${standardId} trong đánh giá chất lượng giáo dục trường tiểu học (theo TT 17/2018 sửa đổi bởi TT 22/2024).
+2. Khái quát nội dung các tiêu chí thuộc tiêu chuẩn này (liệt kê ngắn gọn, không đánh giá).
+3. Khẳng định tầm quan trọng đối với nhà trường.
+
+Viết liền mạch thành 2-3 đoạn văn, độ dài 150-250 từ. Văn phong hành chính trang trọng. KHÔNG dùng tiêu đề phụ **bold**, KHÔNG liệt kê dấu đầu dòng — chỉ viết văn xuôi.${oldRep}`;
+  }
+
+  if (type === 'ketluan-tc') {
+    const { standardId, standardName } = meta;
+    const std = STANDARDS.find(s => s.id === standardId);
+    const tcEvals = std.criteria.map(cr => {
+      const c = data.generated[`tc-${standardId}-${cr.num}`]?.content || '';
+      const m = c.match(/(?:\*\*)?5\.?\s*Tự\s*đánh\s*giá[:\*]*\s*([^\n]+)/i) || c.match(/Tự đánh giá[:\s]+([^\n.]+)/i);
+      const result = m ? m[1].replace(/\*+/g, '').trim().slice(0, 120) : '[chưa có tự đánh giá]';
+      return `- Tiêu chí ${standardId}.${cr.num} (${cr.name}): ${result}`;
+    }).join('\n');
+
+    return `Viết KẾT LUẬN về Tiêu chuẩn ${standardId}: ${standardName} (đặt sau khi đã đánh giá xong toàn bộ tiêu chí thuộc tiêu chuẩn).
+
+TỔNG HỢP KẾT QUẢ TỰ ĐÁNH GIÁ TỪNG TIÊU CHÍ:
+${tcEvals}
+
+CẤU TRÚC BẮT BUỘC:
+
+**1. Điểm mạnh nổi bật của Tiêu chuẩn ${standardId}**
+2-3 điểm mạnh tổng thể (đúc kết từ các tiêu chí), mỗi điểm 1-2 câu có dẫn chứng.
+
+**2. Điểm yếu cần khắc phục**
+1-2 điểm yếu chung, ngắn gọn, có phân tích nguyên nhân.
+
+**3. Kết luận**
+Thống kê: Số tiêu chí ĐẠT / KHÔNG ĐẠT ở từng Mức 1/2/3/4 (dạng liệt kê ngắn). Tiêu chuẩn ${standardId} đạt Mức cao nhất là Mức …
+
+Độ dài 250-400 từ. Văn phong hành chính.${oldRep}`;
+  }
+
+  if (type === 'datvande') {
+    return `Viết mục "A. ĐẶT VẤN ĐỀ" của Phần II — Tự đánh giá. Nội dung gồm:
+
+1. Khái quát tình hình nhà trường: quá trình hình thành và phát triển, thành tích nổi bật.
+2. Bối cảnh chung và đặc điểm riêng của nhà trường (thuận lợi, khó khăn).
+3. Mục đích tự đánh giá.
+4. Quy trình tự đánh giá theo CV 5932/BGDĐT-QLCL ngày 28/12/2018 gồm 7 bước:
+   a) Thành lập hội đồng tự đánh giá
+   b) Lập kế hoạch tự đánh giá
+   c) Thu thập, xử lý và phân tích các minh chứng
+   d) Đánh giá các mức đạt được theo từng tiêu chí
+   đ) Viết báo cáo tự đánh giá
+   e) Công bố báo cáo tự đánh giá
+   g) Triển khai các hoạt động sau khi hoàn thành báo cáo tự đánh giá
+5. Phương pháp và công cụ đánh giá: nghiên cứu hồ sơ; phỏng vấn; quan sát; phiếu đánh giá tiêu chí.
+
+Văn phong trang trọng, mạch lạc. Độ dài 500-700 từ.${oldRep}`;
+  }
+
+  if (type === 'tieuchi') {
+    const { standardId, standardName, criterion } = meta;
+    const levels = criterion.levels;
+    const renderLevel = (lvl, arr) => {
+      if (!arr || arr.length === 0) return `**Mức ${lvl}:** (Thông tư không quy định thêm yêu cầu riêng cho tiêu chí này ở Mức ${lvl})`;
+      return `**Mức ${lvl}** (chỉ báo NGUYÊN VĂN theo Thông tư — KHÔNG sửa đổi):\n${arr.join('\n')}`;
+    };
+    const mucRegister = data.schoolInfo.mucDangKy || 2;
+    const blocks = [];
+    for (let m = 1; m <= 4; m++) {
+      if (m > mucRegister && (!levels[m] || levels[m].length === 0)) continue;
+      blocks.push(renderLevel(m, levels[m]));
+    }
+    const indicatorsBlock = blocks.join('\n\n');
+
+    return `Viết phần TỰ ĐÁNH GIÁ cho TIÊU CHÍ ${standardId}.${criterion.num}: ${criterion.name}
+(Thuộc Tiêu chuẩn ${standardId}: ${standardName})
+
+═════ CHỈ BÁO CỤ THỂ (BÁM SÁT CHÍNH XÁC, KHÔNG THAY ĐỔI) ═════
+
+${indicatorsBlock}
+
+═════════════════════════════════════════════════
+
+Trường đăng ký đánh giá đến **Mức ${mucRegister}**. Hãy viết các Mức từ 1 đến ${mucRegister} (và Mức 4 nếu có và được đăng ký).
+
+CẤU TRÚC BẮT BUỘC:
+
+**Tiêu chí ${standardId}.${criterion.num}: ${criterion.name}**
+
+Liệt kê lại các chỉ báo từng Mức đúng nguyên văn.
+
+**1. Mô tả hiện trạng**
+
+Viết theo TỪNG Mức, TỪNG chỉ báo a/b/c. Với mỗi chỉ báo, mô tả nhà trường thực hiện như thế nào, dẫn chứng bằng mã minh chứng [H${standardId}-${standardId}.${criterion.num}-01], [H${standardId}-${standardId}.${criterion.num}-02]... Nếu thiếu dữ liệu → [CẦN BỔ SUNG].
+
+**2. Điểm mạnh**
+
+2-3 điểm mạnh nổi bật nhất, mỗi điểm 1-2 câu có dẫn chứng.
+
+**3. Điểm yếu**
+
+1-2 điểm yếu trung thực, có phân tích nguyên nhân chủ quan/khách quan.
+
+**4. Kế hoạch cải tiến chất lượng**
+
+Mỗi điểm yếu → 1 biện pháp cụ thể: nội dung · người chủ trì · thời gian · kinh phí (nếu có).
+
+**5. Tự đánh giá**
+
+Ghi rõ: "Tiêu chí ${standardId}.${criterion.num} ĐẠT Mức ... / KHÔNG ĐẠT." kèm lý do 1 câu.
+
+Độ dài 600-900 từ. Văn phong hành chính chuẩn.${oldRep}${ev}`;
+  }
+
+  if (type === 'ketluan') {
+    return `Viết PHẦN III: KẾT LUẬN CHUNG của Báo cáo Tự đánh giá. Gồm:
+
+**1. Tổng hợp kết quả tự đánh giá**
+
+Thống kê (dạng liệt kê, không dùng bảng):
+- Số lượng và tỷ lệ % chỉ báo ĐẠT / KHÔNG ĐẠT theo từng mức (Mức 1, 2, 3, 4).
+- Số lượng và tỷ lệ % tiêu chí ĐẠT / KHÔNG ĐẠT theo từng mức.
+- Mức đánh giá chung của nhà trường (Đạt Mức …).
+
+**2. Điểm mạnh nổi bật của nhà trường**
+
+Nêu 3-4 điểm mạnh lớn nhất, ngắn gọn.
+
+**3. Những hạn chế, tồn tại**
+
+Nêu 2-3 hạn chế chính.
+
+**4. Định hướng phát triển và cam kết**
+
+Định hướng 5 năm tới; cam kết cải tiến chất lượng.
+
+Cuối báo cáo, để trống 1 dòng rồi ghi phần ký (căn giữa):
+
+..., ngày ... tháng ... năm ...
+HIỆU TRƯỞNG
+(Ký tên, đóng dấu)
+
+${data.schoolInfo.principal || '...'}
+
+Độ dài 400-600 từ. Số liệu chưa có thì ghi [CẦN BỔ SUNG].`;
+  }
+  return '';
+};
+
+/* ============================================================
+   SECTIONS LIST
+   Cấu trúc theo format chuẩn (tham khảo báo cáo mẫu TH Tân Sơn Nhì 2025):
+     - Phần I · Cơ sở dữ liệu
+     - Phần II · Tự đánh giá:
+         A. Đặt vấn đề
+         B. Tự đánh giá:
+            Tiêu chuẩn 1 — Mở đầu → TC1.1 → ... → TC1.10 → Kết luận TC1
+            Tiêu chuẩn 2 — Mở đầu → ... → Kết luận TC2
+            ...
+     - Phần III · Kết luận chung
+============================================================ */
+const buildSectionsList = () => {
+  const list = [
+    { id: 'bangtonghop', type: 'bangtonghop', label: 'Bảng tổng hợp kết quả tự đánh giá', kind: 'computed' },
+    { id: 'coso', type: 'coso', label: 'Phần I · Cơ sở dữ liệu', kind: 'meta' },
+    { id: 'datvande', type: 'datvande', label: 'A. Đặt vấn đề', kind: 'meta' }
+  ];
+  STANDARDS.forEach(std => {
+    list.push({
+      id: `std-${std.id}-modau`,
+      type: 'modau',
+      label: `Tiêu chuẩn ${std.id} — Mở đầu`,
+      kind: 'meta',
+      meta: { standardId: std.id, standardName: std.name }
+    });
+    std.criteria.forEach(cr => {
+      list.push({
+        id: `tc-${std.id}-${cr.num}`,
+        type: 'tieuchi',
+        label: `Tiêu chí ${std.id}.${cr.num}: ${cr.name}`,
+        kind: 'tieuchi',
+        meta: { standardId: std.id, standardName: std.name, criterion: cr }
+      });
+    });
+    list.push({
+      id: `std-${std.id}-ketluan`,
+      type: 'ketluan-tc',
+      label: `Tiêu chuẩn ${std.id} — Kết luận`,
+      kind: 'meta',
+      meta: { standardId: std.id, standardName: std.name }
+    });
+  });
+  list.push({ id: 'ketluan', type: 'ketluan', label: 'Phần III · Kết luận chung', kind: 'meta' });
+  list.push({ id: 'phuluc', type: 'phuluc', label: 'Phần IV · Phụ lục — Danh mục minh chứng', kind: 'computed' });
+  return list;
+};
+
+/* ============================================================
+   EXPORT .DOC (theo NĐ 30/2020 + MSO)
+============================================================ */
+const mdToHtml = (md) => {
+  if (!md) return '<p class="placeholder">[CHƯA TẠO NỘI DUNG]</p>';
+  let t = md;
+  t = t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+  // Render bảng markdown | ... | (TRƯỚC khi xử lý heading/bold để bảo toàn cấu trúc)
+  t = t.replace(
+    /(?:^\|[^\n]+\|[ \t]*\n)(?:\|[ \t:\-]+\|[ \t]*\n)((?:\|[^\n]+\|[ \t]*\n?)+)/gm,
+    (match) => {
+      const rawLines = match.trim().split('\n').filter(l => l.trim().startsWith('|'));
+      if (rawLines.length < 2) return match;
+      const splitRow = (l) => l.trim().replace(/^\||\|$/g, '').split('|').map(c => c.trim());
+      const header = splitRow(rawLines[0]);
+      const isSep = /^[\s:\-|]+$/.test(rawLines[1]);
+      const bodyRows = rawLines.slice(isSep ? 2 : 1).map(splitRow);
+      let html = '<table>';
+      html += '<tr>' + header.map(c => `<th>${c}</th>`).join('') + '</tr>';
+      bodyRows.forEach(r => { html += '<tr>' + r.map(c => `<td>${c}</td>`).join('') + '</tr>'; });
+      html += '</table>';
+      return '\n' + html + '\n';
+    }
+  );
+
+  t = t.replace(/^#{1,6}\s+(.+)$/gm, '<h4>$1</h4>');
+  t = t.replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
+  t = t.replace(/__(.+?)__/g, '<b>$1</b>');
+  t = t.replace(/(^|[^*])\*([^*\n]+?)\*([^*]|$)/g, '$1<i>$2</i>$3');
+  const lines = t.split('\n');
+  let out = '';
+  for (const raw of lines) {
+    const l = raw.trim();
+    if (!l) continue;
+    if (/^<(h[1-6]|table|ul|hr|div|p|tr|td|th|\/table|\/tr)/.test(l)) { out += l; continue; }
+    if (/^[-•*+]\s+/.test(l)) {
+      out += '<p class="dash">- ' + l.replace(/^[-•*+]\s+/, '') + '</p>';
+    } else {
+      out += '<p>' + l + '</p>';
+    }
+  }
+  return out;
+};
+
+const buildFullDocHtml = (data) => {
+  const { schoolInfo, generated } = data;
+  const get = (k) => generated[k]?.content || '';
+  const yr = `${schoolInfo.academicYearFrom}-${schoolInfo.academicYearTo}`;
+
+  let h = `<!DOCTYPE html>
+<html xmlns:o="urn:schemas-microsoft-com:office:office"
+      xmlns:w="urn:schemas-microsoft-com:office:word"
+      xmlns="http://www.w3.org/TR/REC-html40">
+<head>
+<meta charset="utf-8">
+<meta name="ProgId" content="Word.Document">
+<meta name="Generator" content="TDG-TH">
+<title>Báo cáo TĐG - ${schoolInfo.name || 'Trường Tiểu học'}</title>
+<!--[if gte mso 9]><xml>
+<w:WordDocument><w:View>Print</w:View><w:Zoom>100</w:Zoom><w:DoNotOptimizeForBrowser/></w:WordDocument>
+</xml><![endif]-->
+<style>
+@page WordSection1 {
+  size: 21cm 29.7cm;
+  margin: 2cm 2cm 2cm 3cm;
+  mso-page-orientation: portrait;
+  mso-header-margin: 1.25cm;
+  mso-footer-margin: 1.25cm;
+  mso-paper-source: 0;
+}
+div.WordSection1 { page: WordSection1; }
+body { font-family: 'Times New Roman', serif; font-size: 14pt; line-height: 1.5; color: #000; margin: 0; }
+h1 { text-align: center; font-size: 16pt; font-weight: bold; margin: 14pt 0; text-transform: uppercase; mso-pagination: lines-together; font-family: 'Times New Roman', serif; }
+h2 { text-align: center; font-size: 15pt; font-weight: bold; margin: 12pt 0 6pt; text-transform: uppercase; font-family: 'Times New Roman', serif; }
+h3 { font-size: 14pt; font-weight: bold; margin: 12pt 0 6pt; text-align: left; text-indent: 0; text-transform: uppercase; font-family: 'Times New Roman', serif; }
+h4 { font-size: 14pt; font-weight: bold; font-style: italic; margin: 8pt 0 4pt; text-align: left; text-indent: 0; font-family: 'Times New Roman', serif; }
+p { text-align: justify; text-indent: 1.27cm; margin: 0; line-height: 1.5; mso-line-height-rule: exactly; font-family: 'Times New Roman', serif; font-size: 14pt; }
+p.center { text-align: center; text-indent: 0; }
+p.no-indent { text-indent: 0; }
+p.dash { text-indent: 0; margin-left: 0.75cm; }
+p.placeholder { color: #999; font-style: italic; text-indent: 0; }
+table { border-collapse: collapse; margin: 6pt 0; width: 100%; mso-table-lspace: 0; mso-table-rspace: 0; }
+td, th { border: 1pt solid #000; padding: 4pt 6pt; text-align: left; vertical-align: top; font-size: 14pt; font-family: 'Times New Roman', serif; }
+th { text-align: center; font-weight: bold; }
+.page-break { page-break-after: always; mso-break-type: section-break; }
+.cover-spacer { height: 120pt; }
+</style>
+</head>
+<body>
+<div class="WordSection1">`;
+
+  // Trang bìa — tất cả dùng Times New Roman, các chữ lớn in hoa theo yêu cầu
+  h += `<p class="center no-indent" style="margin-top:18pt;font-size:14pt"><b>UBND ${schoolInfo.ward ? schoolInfo.ward.toUpperCase() : '...'}</b></p>`;
+  h += `<p class="center no-indent" style="font-size:15pt"><b>${(schoolInfo.name || 'TRƯỜNG ...').toUpperCase()}</b></p>`;
+  h += `<p class="center no-indent" style="margin-top:8pt;font-size:14pt">──────────</p>`;
+  h += `<div class="cover-spacer"></div>`;
+  h += `<p class="center no-indent" style="font-size:22pt"><b>BÁO CÁO TỰ ĐÁNH GIÁ</b></p>`;
+  h += `<p class="center no-indent" style="margin-top:12pt;font-style:italic;font-size:14pt">(Kiểm định chất lượng giáo dục và công nhận đạt chuẩn quốc gia)</p>`;
+  h += `<div class="cover-spacer"></div><div class="cover-spacer"></div>`;
+  h += `<p class="center no-indent" style="font-size:14pt"><b>${(schoolInfo.province || '...').toUpperCase()}, NĂM ${schoolInfo.academicYearTo || new Date().getFullYear()}</b></p>`;
+  h += `<p class="center no-indent page-break">&nbsp;</p>`;
+
+  // Hội đồng TĐG (render từ schoolInfo.council, fallback về mặc định)
+  h += `<h1>Danh sách và chữ ký thành viên Hội đồng tự đánh giá</h1>`;
+  h += `<table><tr><th style="width:6%">TT</th><th style="width:28%">Họ và tên</th><th style="width:24%">Chức vụ</th><th style="width:26%">Nhiệm vụ trong Hội đồng</th><th style="width:16%">Chữ ký</th></tr>`;
+  const council = (schoolInfo.council && schoolInfo.council.length) ? schoolInfo.council : [{ name: schoolInfo.principal || '', position: 'Hiệu trưởng', role: 'Chủ tịch Hội đồng' }];
+  council.forEach((m, i) => {
+    const nm = (i === 0 && !m.name) ? (schoolInfo.principal || '') : (m.name || '');
+    h += `<tr><td style="text-align:center">${i+1}</td><td>${nm}</td><td>${m.position || ''}</td><td>${m.role || ''}</td><td></td></tr>`;
+  });
+  h += `</table>`;
+  h += `<p class="center no-indent page-break">&nbsp;</p>`;
+
+  // Mục lục
+  h += `<h1>Mục lục</h1>`;
+  h += `<p class="no-indent">Danh mục các chữ viết tắt</p>`;
+  h += `<p class="no-indent">Bảng tổng hợp kết quả tự đánh giá</p>`;
+  h += `<p class="no-indent"><b>Phần I. Cơ sở dữ liệu</b></p>`;
+  h += `<p class="no-indent"><b>Phần II. Tự đánh giá</b></p>`;
+  h += `<p class="no-indent" style="margin-left:0.75cm">A. Đặt vấn đề</p>`;
+  h += `<p class="no-indent" style="margin-left:0.75cm">B. Tự đánh giá</p>`;
+  STANDARDS.forEach(s => {
+    h += `<p class="no-indent" style="margin-left:1.5cm">Tiêu chuẩn ${s.id}: ${s.name}</p>`;
+    h += `<p class="no-indent" style="margin-left:2.25cm;font-style:italic">Mở đầu</p>`;
+    h += `<p class="no-indent" style="margin-left:2.25cm">Kết luận về Tiêu chuẩn ${s.id}</p>`;
+  });
+  h += `<p class="no-indent"><b>Phần III. Kết luận chung</b></p>`;
+  h += `<p class="center no-indent page-break">&nbsp;</p>`;
+
+  // Bảng tổng hợp kết quả tự đánh giá (tính tự động từ nội dung đã sinh)
+  h += `<h1>Bảng tổng hợp kết quả tự đánh giá</h1>`;
+  h += buildBangTongHopHtml(data);
+  h += `<p class="center no-indent page-break">&nbsp;</p>`;
+
+  // Nội dung
+  h += `<h1>Phần I. Cơ sở dữ liệu</h1>` + mdToHtml(get('coso'));
+  h += `<p class="center no-indent page-break">&nbsp;</p>`;
+  h += `<h1>Phần II. Tự đánh giá</h1>`;
+  h += `<h2>A. Đặt vấn đề</h2>` + mdToHtml(get('datvande'));
+  h += `<h2>B. Tự đánh giá</h2>`;
+  STANDARDS.forEach(std => {
+    h += `<h3>Tiêu chuẩn ${std.id}: ${std.name}</h3>`;
+    h += `<h4>Mở đầu</h4>` + mdToHtml(get(`std-${std.id}-modau`));
+    std.criteria.forEach(cr => {
+      h += mdToHtml(get(`tc-${std.id}-${cr.num}`));
+    });
+    h += `<h4>Kết luận về Tiêu chuẩn ${std.id}</h4>` + mdToHtml(get(`std-${std.id}-ketluan`));
+  });
+  h += `<p class="center no-indent page-break">&nbsp;</p>`;
+  h += `<h1>Phần III. Kết luận chung</h1>` + mdToHtml(get('ketluan'));
+
+  // Phần IV. Phụ lục — danh mục minh chứng
+  h += `<p class="center no-indent page-break">&nbsp;</p>`;
+  h += `<h1>Phần IV. Phụ lục — Danh mục minh chứng</h1>`;
+  h += buildPhuLucHtml(data);
+
+  h += `</div></body></html>`;
+  return h;
+};
+
+/* Tính "Bảng tổng hợp kết quả" bằng cách parse "Đạt Mức X" / "Không đạt"
+   từ nội dung tự đánh giá đã sinh cho từng tiêu chí. */
+const buildBangTongHopHtml = (data) => {
+  let h = `<table style="width:100%">`;
+  h += `<tr><th rowspan="2" style="width:32%">Tiêu chuẩn, tiêu chí</th><th rowspan="2" style="width:12%">Không đạt</th><th colspan="4" style="text-align:center">Đạt</th></tr>`;
+  h += `<tr><th style="width:14%">Mức 1</th><th style="width:14%">Mức 2</th><th style="width:14%">Mức 3</th><th style="width:14%">Mức 4</th></tr>`;
+  let stats = { notReached: 0, m1: 0, m2: 0, m3: 0, m4: 0, unknown: 0, total: 0 };
+  STANDARDS.forEach(std => {
+    h += `<tr><td colspan="6" style="background:#f1f5f9;font-weight:bold">Tiêu chuẩn ${std.id}: ${std.name}</td></tr>`;
+    std.criteria.forEach(cr => {
+      const lvl = extractSelfAssessLevel(data.generated[`tc-${std.id}-${cr.num}`]?.content);
+      stats.total++;
+      const mark = (c) => `<td style="text-align:center">${c ? '✕' : ''}</td>`;
+      h += `<tr>`;
+      h += `<td>Tiêu chí ${std.id}.${cr.num}: ${cr.name}</td>`;
+      if (lvl === 0) { stats.notReached++; h += mark(true) + mark(false) + mark(false) + mark(false) + mark(false); }
+      else if (lvl === 1) { stats.m1++; h += mark(false) + mark(true) + mark(false) + mark(false) + mark(false); }
+      else if (lvl === 2) { stats.m2++; h += mark(false) + mark(false) + mark(true) + mark(false) + mark(false); }
+      else if (lvl === 3) { stats.m3++; h += mark(false) + mark(false) + mark(false) + mark(true) + mark(false); }
+      else if (lvl === 4) { stats.m4++; h += mark(false) + mark(false) + mark(false) + mark(false) + mark(true); }
+      else { stats.unknown++; h += `<td colspan="5" style="text-align:center;color:#94a3b8;font-style:italic">[chưa tự đánh giá]</td>`; }
+      h += `</tr>`;
+    });
+  });
+  h += `</table>`;
+  // Tổng kết
+  const attained = stats.m1 + stats.m2 + stats.m3 + stats.m4;
+  const reached = stats.m4 > 0 && stats.m4 + stats.m3 + stats.m2 + stats.m1 === stats.total && stats.notReached === 0 ? 4
+    : stats.m3 > 0 && stats.m3 + stats.m2 + stats.m1 === stats.total - stats.m4 && stats.notReached === 0 ? 3
+    : stats.m2 > 0 && stats.m2 + stats.m1 === stats.total - stats.m3 - stats.m4 && stats.notReached === 0 ? 2
+    : stats.notReached === 0 && attained === stats.total ? 1
+    : 0;
+  h += `<p style="margin-top:12pt"><b>Thống kê:</b> ${stats.total} tiêu chí · ${attained} đạt · ${stats.notReached} không đạt · ${stats.unknown} chưa đánh giá.</p>`;
+  h += `<p><b>Kết luận:</b> Trường ${reached > 0 ? `đạt <b>Mức ${reached}</b>` : '<b>[cần hoàn thiện đánh giá]</b>'}.</p>`;
+  return h;
+};
+
+/* Render Phần IV — Phụ lục: parse evidenceList thành danh sách theo tiêu chí. */
+const buildPhuLucHtml = (data) => {
+  const list = (data.sources?.evidenceList || '').trim();
+  if (!list) return `<p style="color:#94a3b8;font-style:italic">[Chưa có danh mục minh chứng. Hãy bấm 🗂 Tư liệu ở thanh tiêu đề để bổ sung.]</p>`;
+
+  // Group by tiêu chí (mã Hx-x.x-xx)
+  const grouped = {};
+  list.split('\n').forEach(line => {
+    const l = line.trim();
+    if (!l) return;
+    const m = l.match(/\[H(\d)-(\d+\.\d+)-(\d+)\]\s*(.+)/);
+    if (m) {
+      const key = `${m[1]}.${m[2].split('.')[1]}`; // e.g. "1.1"
+      if (!grouped[key]) grouped[key] = [];
+      grouped[key].push({ code: `[H${m[1]}-${m[2]}-${m[3]}]`, desc: m[4] });
+    } else {
+      if (!grouped['_other']) grouped['_other'] = [];
+      grouped['_other'].push({ code: '', desc: l });
+    }
+  });
+
+  let h = `<p><b>I. Danh mục minh chứng theo từng tiêu chí</b></p>`;
+  STANDARDS.forEach(std => {
+    let stdHtml = '';
+    std.criteria.forEach(cr => {
+      const key = `${std.id}.${cr.num}`;
+      const items = grouped[key];
+      if (items && items.length > 0) {
+        stdHtml += `<p style="margin-top:6pt"><i>Tiêu chí ${key}: ${cr.name}</i></p>`;
+        items.forEach(it => {
+          stdHtml += `<p class="dash">- <b>${it.code}</b> ${it.desc}</p>`;
+        });
+      }
+    });
+    if (stdHtml) {
+      h += `<p style="margin-top:10pt"><b>Tiêu chuẩn ${std.id}: ${std.name}</b></p>` + stdHtml;
+    }
+  });
+  if (grouped['_other'] && grouped['_other'].length > 0) {
+    h += `<p style="margin-top:10pt"><b>Các minh chứng khác</b></p>`;
+    grouped['_other'].forEach(it => { h += `<p class="dash">- ${it.desc}</p>`; });
+  }
+
+  // Bảng mã hóa tổng hợp
+  h += `<p class="center no-indent page-break">&nbsp;</p>`;
+  h += `<p><b>II. Bảng mã hóa minh chứng (tổng hợp)</b></p>`;
+  h += `<table style="width:100%"><tr><th style="width:18%">Mã minh chứng</th><th>Tên minh chứng</th></tr>`;
+  list.split('\n').forEach(line => {
+    const l = line.trim();
+    if (!l) return;
+    const m = l.match(/(\[H\d-\d+\.\d+-\d+\])\s*(.+)/);
+    if (m) h += `<tr><td style="font-family:'Consolas',monospace">${m[1]}</td><td>${m[2]}</td></tr>`;
+  });
+  h += `</table>`;
+  return h;
+};
+
+/* ============================================================
+   MAIN APP
+============================================================ */
+function App() {
+  const [data, setData] = useState(() => loadLS(LS_KEY) || emptyReport());
+  const [settings, setSettings] = useState(() => {
+    const s = loadLS(LS_SETTINGS) || {};
+    return { appsScriptUrl: DEFAULT_APPS_SCRIPT_URL, ...s };
+  });
+  const [ui, setUi] = useState(() => loadLS(LS_UI) || { openStd: { 1:true,2:true,3:true,4:true,5:true } });
+  const [activeId, setActiveId] = useState(null);
+  const [editing, setEditing] = useState(null);
+  const [editBuf, setEditBuf] = useState('');
+  const [generating, setGenerating] = useState(null);
+  const [toast, setToast] = useState('');
+  const [modal, setModal] = useState(null);
+  const [search, setSearch] = useState('');
+  const docScrollRef = useRef(null);
+
+  const sections = useMemo(() => buildSectionsList(), []);
+  const yearStr = `${data.schoolInfo.academicYearFrom}-${data.schoolInfo.academicYearTo}`;
+
+  useEffect(() => { const t = setTimeout(() => saveLS(LS_KEY, data), 800); return () => clearTimeout(t); }, [data]);
+  useEffect(() => saveLS(LS_SETTINGS, settings), [settings]);
+  useEffect(() => saveLS(LS_UI, ui), [ui]);
+
+  const showToast = (m) => { setToast(m); setTimeout(() => setToast(''), 2800); };
+
+  // Tiến độ chỉ tính các section cần AI sinh (bỏ qua bangtonghop + phuluc vì tự tính)
+  const aiSections = sections.filter(s => s.kind !== 'computed');
+  const totalSections = aiSections.length;
+  const doneSections = aiSections.filter(s => data.generated[s.id]?.status === 'done').length;
+  const pct = Math.round((doneSections / totalSections) * 100);
+
+  const active = useMemo(() => sections.find(s => s.id === activeId), [activeId, sections]);
+  const activeGen = activeId ? data.generated[activeId] : null;
+
+  const onOutlineClick = (id) => {
+    setActiveId(id);
+    setTimeout(() => {
+      const el = document.getElementById(`sec-${id}`);
+      if (el && docScrollRef.current) {
+        docScrollRef.current.scrollTo({ top: el.offsetTop - 20, behavior: 'smooth' });
+      }
+    }, 50);
+  };
+
+  const startEdit = (id) => { setEditing(id); setEditBuf(data.generated[id]?.content || ''); };
+  const saveEdit = () => {
+    if (!editing) return;
+    setData(d => ({ ...d, generated: { ...d.generated, [editing]: { status: 'done', content: editBuf, updatedAt: new Date().toISOString() } } }));
+    setEditing(null);
+    showToast('✓ Đã lưu chỉnh sửa');
+  };
+  const cancelEdit = () => setEditing(null);
+
+  const generateOne = async (section) => {
+    if (section.kind === 'computed') {
+      showToast('ℹ Mục này tự tính — không cần AI tạo.');
+      return;
+    }
+    setGenerating(section.id);
+    setData(d => ({ ...d, generated: { ...d.generated, [section.id]: { status: 'generating', content: '' } } }));
+    try {
+      const sys = systemPromptBase(data.schoolInfo);
+      const usr = buildUserPrompt(section, data);
+      const driveUrls = (data.sources.driveLinks || []).map(l => l.url).filter(Boolean);
+      const res = await callBackend(settings.appsScriptUrl, { action: 'ai', systemPrompt: sys, userPrompt: usr, driveFolderUrls: driveUrls });
+      const content = sanitize(res.content);
+      setData(d => ({ ...d, generated: { ...d.generated, [section.id]: { status: 'done', content, updatedAt: new Date().toISOString() } } }));
+      showToast('✓ AI đã tạo: ' + section.label.slice(0, 40));
+    } catch (e) {
+      setData(d => ({ ...d, generated: { ...d.generated, [section.id]: { status: 'error', content: '', error: e.message } } }));
+      showToast('❌ ' + e.message);
+    } finally {
+      setGenerating(null);
+    }
+  };
+
+  const generateAll = async () => {
+    const aiSections = sections.filter(s => s.kind !== 'computed');
+    if (!confirm(`Tạo TOÀN BỘ ${aiSections.length} phần bằng AI? Quá trình mất 5-15 phút. Có thể dừng giữa chừng.`)) return;
+    for (const s of aiSections) {
+      if (data.generated[s.id]?.status === 'done') continue;
+      await generateOne(s);
+    }
+    showToast('🎉 Hoàn thành tạo toàn bộ báo cáo');
+  };
+
+  const saveToCloud = async () => {
+    if (!data.schoolInfo.name) { alert('Vui lòng điền tên trường trước khi lưu.'); setModal('school'); return; }
+    const id = data.reportId || genReportId(data.schoolInfo);
+    showToast('☁ Đang tải lên Drive…');
+    try {
+      await callBackend(settings.appsScriptUrl, { action: 'saveReport', reportId: id, content: { ...data, reportId: id, savedAt: new Date().toISOString() } });
+      setData(d => ({ ...d, reportId: id, savedAt: new Date().toISOString() }));
+      showToast('✓ Đã lưu lên Drive');
+    } catch (e) { showToast('❌ ' + e.message); }
+  };
+
+  const loadFromCloud = async (rid) => {
+    try {
+      const res = await callBackend(settings.appsScriptUrl, { action: 'loadReport', reportId: rid });
+      setData(res.content);
+      setModal(null);
+      showToast('✓ Đã tải báo cáo');
+    } catch (e) { showToast('❌ ' + e.message); }
+  };
+
+  const newReport = () => {
+    if (doneSections > 0 && !confirm('Tạo báo cáo MỚI? Dữ liệu hiện tại sẽ bị xoá khỏi máy (nên Lưu Drive trước).')) return;
+    setData(emptyReport());
+    setActiveId(null);
+    setEditing(null);
+    showToast('✓ Đã tạo báo cáo trống');
+  };
+
+  const exportWord = () => {
+    const html = buildFullDocHtml(data);
+    const blob = new Blob([html], { type: 'application/msword' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `BaoCaoTDG_TH_${(data.schoolInfo.name || 'Truong').replace(/\s+/g, '_')}_${yearStr}.doc`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('⬇ Đang tải xuống file Word');
+  };
+
+  return (
+    <div className="app">
+      <div className="topbar">
+        <div className="brand-logo">📚</div>
+        <div style={{lineHeight:1.15}}>
+          <div className="display brand-title" style={{fontSize:14.5,fontWeight:700,letterSpacing:'0.02em'}}>BÁO CÁO TỰ ĐÁNH GIÁ</div>
+          <div className="brand-sub" style={{fontSize:10.5,marginTop:2,letterSpacing:'0.03em'}}>KIỂM ĐỊNH CHẤT LƯỢNG GIÁO DỤC TIỂU HỌC</div>
+        </div>
+        <div style={{flex:1,display:'flex',alignItems:'center',justifyContent:'center',gap:10}}>
+          <button className="sch-pill" onClick={() => setModal('school')} title="Chỉnh thông tin trường">
+            <ISchool className="w-3.5 h-3.5"/>
+            <span style={{fontWeight:500}}>{data.schoolInfo.name || 'Chưa đặt tên trường'}</span>
+            <span style={{opacity:0.7}}>· {yearStr}</span>
+          </button>
+        </div>
+        <div className="save-status">
+          {generating ? <><ILoad className="w-3.5 h-3.5 animate-spin"/> AI đang viết…</>
+            : data.savedAt ? <>✓ Drive {new Date(data.savedAt).toLocaleTimeString('vi-VN', { hour:'2-digit', minute:'2-digit' })}</>
+            : <>💾 Tự lưu máy</>}
+        </div>
+        <div style={{display:'flex',gap:4}}>
+          <button className="btn btn-soft btn-xs" onClick={generateAll} disabled={!!generating} title="Dùng AI viết toàn bộ">
+            <ISpark className="w-3.5 h-3.5"/> AI toàn bộ
+          </button>
+          <button className="btn btn-xs" onClick={() => setModal('guide')} title={active ? `Xem chỉ báo cho: ${active.label}` : 'Hướng dẫn sử dụng'}>
+            <IInfo className="w-3.5 h-3.5"/> {active && active.kind === 'tieuchi' ? `Chỉ báo ${active.meta.standardId}.${active.meta.criterion.num}` : 'Hướng dẫn'}
+          </button>
+          <button className="btn btn-xs" onClick={saveToCloud} title="Lưu lên Drive">
+            <ICloudUp className="w-3.5 h-3.5"/>
+          </button>
+          <button className="btn btn-xs" onClick={() => setModal('cloud')} title="Báo cáo trên Drive">
+            <IList className="w-3.5 h-3.5"/>
+          </button>
+          <button className="btn btn-xs" onClick={() => setModal('sources')} title="Tư liệu & minh chứng">
+            <IFolder className="w-3.5 h-3.5"/>
+          </button>
+          <button className="btn btn-xs" onClick={exportWord} title="Xuất file Word .doc">
+            <IDown className="w-3.5 h-3.5"/> Xuất
+          </button>
+        </div>
+      </div>
+
+      <div className="main">
+        <OutlineSidebar
+          standards={STANDARDS} data={data} ui={ui} setUi={setUi}
+          activeId={activeId} onClick={onOutlineClick}
+          generating={generating} search={search} setSearch={setSearch}
+          pct={pct} done={doneSections} total={totalSections}
+          onNew={newReport}
+        />
+        <div className="doc-scroll" ref={docScrollRef}>
+          <div className="doc-wrap">
+            <div className="doc-page">
+              <DocumentView
+                data={data} standards={STANDARDS} sections={sections}
+                activeId={activeId} setActiveId={setActiveId}
+                editing={editing} editBuf={editBuf} setEditBuf={setEditBuf}
+                startEdit={startEdit} saveEdit={saveEdit} cancelEdit={cancelEdit}
+                generating={generating} generateOne={generateOne}
+                yearStr={yearStr}
+              />
+            </div>
+            <div style={{textAlign:'center',marginTop:28,color:'var(--faint)',fontSize:11}}>
+              Căn cứ: TT 17/2018 · TT 22/2024 · CV 5932/BGDĐT-QLCL · TT 13/2020 (sửa bởi TT 23/2024) &nbsp;·&nbsp; TĐG-TH v1.0
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {modal === 'school' && <SchoolInfoModal schoolInfo={data.schoolInfo} onSave={(info) => { setData(d => ({ ...d, schoolInfo: info })); setModal(null); showToast('✓ Đã cập nhật'); }} onClose={() => setModal(null)}/>}
+      {modal === 'sources' && <SourcesModal sources={data.sources} settings={settings} onSave={(s) => { setData(d => ({ ...d, sources: s })); setModal(null); showToast('✓ Đã cập nhật tư liệu'); }} onClose={() => setModal(null)}/>}
+      {modal === 'cloud' && <CloudModal settings={settings} onLoad={loadFromCloud} onClose={() => setModal(null)}/>}
+      {modal === 'guide' && <GuideModal active={active} activeGen={activeGen} data={data} generating={generating}
+        generateOne={(s) => { generateOne(s); setModal(null); }}
+        startEdit={(id) => { startEdit(id); setModal(null); }}
+        onClose={() => setModal(null)}/>}
+      {toast && <div className="toast">{toast}</div>}
+    </div>
+  );
+}
+
+/* ============================================================
+   OUTLINE SIDEBAR
+============================================================ */
+function OutlineSidebar({ standards, data, ui, setUi, activeId, onClick, generating, search, setSearch, pct, done, total, onNew }) {
+  const statusOf = (id) => {
+    if (generating === id) return 'gen';
+    const g = data.generated[id];
+    if (g?.status === 'done') return 'done';
+    if (g?.status === 'error') return 'err';
+    return '';
+  };
+  const toggleStd = (id) => setUi(u => ({ ...u, openStd: { ...u.openStd, [id]: !u.openStd[id] } }));
+  const matchSearch = (txt) => !search || txt.toLowerCase().includes(search.toLowerCase());
+
+  return (
+    <div className="outline">
+      <div className="outline-h">
+        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:8}}>
+          <div style={{fontSize:12,color:'#fff',fontWeight:600,letterSpacing:'0.02em'}}>📋 Dàn ý</div>
+          <button className="btn btn-xs btn-ghost" onClick={onNew} title="Báo cáo mới" style={{color:'rgba(255,255,255,0.9)',background:'rgba(255,255,255,0.1)',borderColor:'transparent'}}><IPlus className="w-3 h-3"/></button>
+        </div>
+        <input className="outline-search" placeholder="🔍 Tìm tiêu chí…" value={search} onChange={e => setSearch(e.target.value)}/>
+        <div style={{marginTop:10}}>
+          <div style={{display:'flex',justifyContent:'space-between',fontSize:11,color:'var(--sb-ink-muted)',marginBottom:4}}>
+            <span>{done}/{total} mục</span>
+            <span style={{fontWeight:600,color:'#bbf7d0'}}>{pct}%</span>
+          </div>
+          <div className="progress-bar"><div style={{width:`${pct}%`}}/></div>
+        </div>
+      </div>
+
+      <div style={{padding:'8px 0 24px'}}>
+        <div className="ol-section">Đầu báo cáo</div>
+        <div className={`ol-item ${activeId==='bangtonghop'?'active':''} done`} onClick={() => onClick('bangtonghop')}>
+          <span className="dot"></span><span style={{flex:1,fontStyle:'italic',opacity:0.92}}>📊 Bảng tổng hợp kết quả</span>
+        </div>
+        <div className={`ol-item ${activeId==='coso'?'active':''} ${statusOf('coso')}`} onClick={() => onClick('coso')}>
+          <span className="dot"></span><span style={{flex:1}}>Phần I. Cơ sở dữ liệu</span>
+        </div>
+        <div className={`ol-item ${activeId==='datvande'?'active':''} ${statusOf('datvande')}`} onClick={() => onClick('datvande')}>
+          <span className="dot"></span><span style={{flex:1}}>A. Đặt vấn đề</span>
+        </div>
+
+        <div className="ol-section">B. Tự đánh giá theo tiêu chuẩn</div>
+        {standards.map(std => {
+          const open = ui.openStd[std.id];
+          const visible = std.criteria.filter(cr => matchSearch(`${std.id}.${cr.num} ${cr.name}`));
+          if (search && visible.length === 0) return null;
+          const modauId = `std-${std.id}-modau`;
+          const ketluanId = `std-${std.id}-ketluan`;
+          const doneCr = std.criteria.filter(cr => data.generated[`tc-${std.id}-${cr.num}`]?.status === 'done').length
+            + (data.generated[modauId]?.status === 'done' ? 1 : 0)
+            + (data.generated[ketluanId]?.status === 'done' ? 1 : 0);
+          const totalCr = std.criteria.length + 2;
+          return (
+            <div key={std.id}>
+              <div className={`ol-group ${open?'open':''}`} onClick={() => toggleStd(std.id)}>
+                <IChev className="w-3 h-3 chev"/>
+                <span style={{flex:1}}>TC {std.id}. {std.name}</span>
+                <span style={{fontSize:11,color:'var(--sb-faint)',fontWeight:400}}>{doneCr}/{totalCr}</span>
+              </div>
+              <div className={`ol-tree ${open||search?'open':''}`}>
+                <div className={`ol-item indent ${activeId===modauId?'active':''} ${statusOf(modauId)}`} onClick={() => onClick(modauId)}>
+                  <span className="dot"></span>
+                  <span style={{flex:1,fontStyle:'italic',opacity:0.9}}>— Mở đầu</span>
+                </div>
+                {visible.map(cr => {
+                  const id = `tc-${std.id}-${cr.num}`;
+                  return (
+                    <div key={cr.num} className={`ol-item indent ${activeId===id?'active':''} ${statusOf(id)}`} onClick={() => onClick(id)}>
+                      <span className="dot"></span>
+                      <span style={{flex:1,minWidth:0,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}} title={cr.name}>
+                        <b>{std.id}.{cr.num}</b> · {cr.name}
+                      </span>
+                    </div>
+                  );
+                })}
+                <div className={`ol-item indent ${activeId===ketluanId?'active':''} ${statusOf(ketluanId)}`} onClick={() => onClick(ketluanId)}>
+                  <span className="dot"></span>
+                  <span style={{flex:1,fontWeight:500}}>— Kết luận TC {std.id}</span>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+
+        <div className="ol-section">Kết thúc</div>
+        <div className={`ol-item ${activeId==='ketluan'?'active':''} ${statusOf('ketluan')}`} onClick={() => onClick('ketluan')}>
+          <span className="dot"></span><span style={{flex:1}}>Phần III. Kết luận chung</span>
+        </div>
+        <div className={`ol-item ${activeId==='phuluc'?'active':''} done`} onClick={() => onClick('phuluc')}>
+          <span className="dot"></span><span style={{flex:1,fontStyle:'italic',opacity:0.92}}>📎 Phần IV. Phụ lục</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ============================================================
+   DOCUMENT VIEW
+============================================================ */
+function DocumentView({ data, standards, sections, activeId, setActiveId, editing, editBuf, setEditBuf, startEdit, saveEdit, cancelEdit, generating, generateOne, yearStr }) {
+  const info = data.schoolInfo;
+
+  const renderBody = (md) => {
+    if (!md) return <div className="doc-placeholder">Chưa có nội dung. Dùng nút <b>✨ Tạo bằng AI</b> ở panel bên phải, hoặc bấm <b>Sửa</b> để viết tay.</div>;
+    const parts = [];
+    const lines = md.split('\n');
+    let buf = [];
+    const flush = (key) => {
+      if (buf.length === 0) return;
+      const p = buf.join('\n');
+      parts.push(<p key={key} dangerouslySetInnerHTML={{ __html: p.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/\*([^*]+?)\*/g, '<em>$1</em>') }}/>);
+      buf = [];
+    };
+    lines.forEach((l, i) => {
+      if (!l.trim()) { flush('p' + i); return; }
+      buf.push(l);
+    });
+    flush('p-end');
+    return parts;
+  };
+
+  const SectionBlock = ({ section, children }) => {
+    const g = data.generated[section.id];
+    const isEditing = editing === section.id;
+    const isGenerating = generating === section.id;
+    const isActive = activeId === section.id;
+
+    return (
+      <div id={`sec-${section.id}`} className={`doc-section ${isActive?'active':''}`} onClick={(e) => {
+        if (e.target.closest('button') || e.target.closest('textarea')) return;
+        setActiveId(section.id);
+      }}>
+        <div className="section-head">
+          <div>
+            <div className="section-meta">{section.kind === 'tieuchi' ? `TC ${section.meta.standardId}` : 'Mục'}</div>
+            {children}
+          </div>
+          <div className="section-actions">
+            {!isEditing && (
+              <>
+                <button className="btn btn-xs btn-soft" disabled={!!generating} onClick={(e) => { e.stopPropagation(); generateOne(section); }} title={g?.status === 'done' ? 'Tạo lại bằng AI' : 'Tạo bằng AI'}>
+                  {isGenerating ? <ILoad className="w-3 h-3 animate-spin"/> : <ISpark className="w-3 h-3"/>}
+                  {g?.status === 'done' ? 'AI lại' : 'AI'}
+                </button>
+                <button className="btn btn-xs" onClick={(e) => { e.stopPropagation(); startEdit(section.id); }} title="Chỉnh sửa thủ công">
+                  <IEdit className="w-3 h-3"/> Sửa
+                </button>
+              </>
+            )}
+            {isEditing && (
+              <>
+                <button className="btn btn-xs btn-ghost" onClick={cancelEdit}>Huỷ</button>
+                <button className="btn btn-xs btn-primary" onClick={saveEdit}><ISave className="w-3 h-3"/> Lưu</button>
+              </>
+            )}
+          </div>
+        </div>
+        {isEditing ? (
+          <textarea className="edit" value={editBuf} onChange={e => setEditBuf(e.target.value)} autoFocus
+            placeholder="Nhập/dán nội dung. Dùng **bold** cho in đậm, dấu - cho danh sách."/>
+        ) : (
+          <div className="doc-body">
+            {isGenerating && <div style={{display:'flex',alignItems:'center',gap:8,padding:14,background:'#f0f9ff',border:'1px solid #bae6fd',borderRadius:8,color:'#0369a1',fontSize:13}}>
+              <ILoad className="w-4 h-4 animate-spin"/> AI đang soạn thảo… Mỗi phần mất ~20-40 giây.
+            </div>}
+            {!isGenerating && g?.status === 'error' && <div style={{padding:12,background:'var(--rose-50)',border:'1px solid #fecaca',borderRadius:8,color:'var(--rose)',fontSize:13}}>
+              <b>Lỗi:</b> {g.error}
+            </div>}
+            {!isGenerating && renderBody(g?.content)}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  return (
+    <div>
+      <div style={{textAlign:'center',paddingBottom:20,borderBottom:'1px solid var(--line-soft)',marginBottom:24,fontFamily:"'Times New Roman',serif"}}>
+        <div style={{fontSize:'13pt',fontWeight:'bold',textTransform:'uppercase',color:'var(--ink)'}}>UBND {info.ward ? info.ward.toUpperCase() : '...'}</div>
+        <div style={{fontSize:'14pt',fontWeight:'bold',marginTop:4,color:'var(--ink)',textTransform:'uppercase'}}>{(info.name || 'TRƯỜNG ...').toUpperCase()}</div>
+        <h1 style={{fontFamily:"'Times New Roman',serif",fontSize:'24pt',fontWeight:'bold',margin:'28px 0 8px',color:'var(--ink)',textTransform:'uppercase',letterSpacing:0}}>BÁO CÁO TỰ ĐÁNH GIÁ</h1>
+        <div style={{fontSize:'13pt',color:'var(--ink)',fontStyle:'italic'}}>(Kiểm định chất lượng giáo dục — cấp Tiểu học)</div>
+        <div style={{marginTop:14,fontSize:'13pt',color:'var(--ink)',fontWeight:'bold',textTransform:'uppercase'}}>
+          {info.province || '...'}, NĂM HỌC {yearStr}
+        </div>
+      </div>
+
+      <ComputedBlock sectionId="bangtonghop" activeId={activeId} setActiveId={setActiveId}
+        title="Bảng tổng hợp kết quả tự đánh giá" subtitle="Tự động tính từ kết quả tự đánh giá mỗi tiêu chí"
+        body={<BangTongHopView data={data}/>}
+      />
+
+      <SectionBlock section={sections.find(s => s.id === 'coso')}>
+        <h2 className="doc-h1">Phần I. Cơ sở dữ liệu</h2>
+      </SectionBlock>
+
+      <div className="doc-section" style={{marginTop:60}}>
+        <div className="section-meta">Phần II</div>
+        <h2 className="doc-h1">Tự đánh giá</h2>
+      </div>
+
+      <SectionBlock section={sections.find(s => s.id === 'datvande')}>
+        <h3 className="doc-h2">A. Đặt vấn đề</h3>
+      </SectionBlock>
+
+      <div style={{marginTop:40}}>
+        <h3 className="doc-h2">B. Tự đánh giá</h3>
+      </div>
+
+      {standards.map(std => (
+        <div key={std.id}>
+          <div className="doc-section" style={{marginTop:36,padding:'14px 16px',background:'linear-gradient(to right, #f0f9ff, transparent)',borderRadius:8,borderLeft:'3px solid var(--brand)'}}>
+            <div className="section-meta" style={{color:'var(--brand-600)'}}>Tiêu chuẩn {std.id}</div>
+            <h3 className="doc-h2" style={{margin:'4px 0',fontFamily:"'Times New Roman',serif"}}>TIÊU CHUẨN {std.id}: {std.name.toUpperCase()}</h3>
+            <div style={{fontSize:12,color:'var(--ink-muted)',fontStyle:'italic'}}>{std.refs}</div>
+          </div>
+          <SectionBlock section={sections.find(s => s.id === `std-${std.id}-modau`)}>
+            <h4 className="doc-h3" style={{fontSize:'14pt',textTransform:'none',letterSpacing:0,fontFamily:"'Times New Roman',serif",fontStyle:'italic',fontWeight:'bold'}}>
+              Mở đầu
+            </h4>
+          </SectionBlock>
+          {std.criteria.map(cr => {
+            const section = sections.find(s => s.id === `tc-${std.id}-${cr.num}`);
+            return (
+              <SectionBlock key={cr.num} section={section}>
+                <h4 className="doc-h3" style={{fontSize:'14pt',textTransform:'none',letterSpacing:0,fontFamily:"'Times New Roman',serif",fontWeight:'bold'}}>
+                  Tiêu chí {std.id}.{cr.num}: {cr.name}
+                </h4>
+              </SectionBlock>
+            );
+          })}
+          <SectionBlock section={sections.find(s => s.id === `std-${std.id}-ketluan`)}>
+            <h4 className="doc-h3" style={{fontSize:'14pt',textTransform:'none',letterSpacing:0,fontFamily:"'Times New Roman',serif",fontWeight:'bold'}}>
+              Kết luận về Tiêu chuẩn {std.id}
+            </h4>
+          </SectionBlock>
+        </div>
+      ))}
+
+      <SectionBlock section={sections.find(s => s.id === 'ketluan')}>
+        <h2 className="doc-h1" style={{marginTop:60}}>Phần III. Kết luận chung</h2>
+      </SectionBlock>
+
+      <ComputedBlock sectionId="phuluc" activeId={activeId} setActiveId={setActiveId}
+        title="Phần IV. Phụ lục — Danh mục minh chứng" subtitle="Tự động tổng hợp từ danh mục minh chứng đã dán ở 🗂 Tư liệu"
+        body={<PhuLucView data={data}/>}
+      />
+    </div>
+  );
+}
+
+/* Block cho các section tự tính (bangtonghop / phuluc) — không có nút AI/Sửa. */
+function ComputedBlock({ sectionId, activeId, setActiveId, title, subtitle, body }) {
+  const isActive = activeId === sectionId;
+  return (
+    <div id={`sec-${sectionId}`} className={`doc-section ${isActive?'active':''}`} style={{marginTop:60}} onClick={() => setActiveId(sectionId)}>
+      <div className="section-head">
+        <div>
+          <div className="section-meta">Tự tính</div>
+          <h2 className="doc-h1">{title}</h2>
+          {subtitle && <div style={{fontSize:12,color:'var(--faint)',fontStyle:'italic',marginTop:2}}>{subtitle}</div>}
+        </div>
+      </div>
+      <div className="doc-body" style={{fontSize:14}}>{body}</div>
+    </div>
+  );
+}
+
+/* View nhỏ của Bảng tổng hợp trong center preview */
+function BangTongHopView({ data }) {
+  let total = 0, notReached = 0, m1 = 0, m2 = 0, m3 = 0, m4 = 0, unknown = 0;
+  const rows = [];
+  STANDARDS.forEach(std => {
+    rows.push({ kind: 'std', text: `Tiêu chuẩn ${std.id}: ${std.name}` });
+    std.criteria.forEach(cr => {
+      const lvl = extractSelfAssessLevel(data.generated[`tc-${std.id}-${cr.num}`]?.content);
+      total++;
+      if (lvl === 0) notReached++;
+      else if (lvl === 1) m1++;
+      else if (lvl === 2) m2++;
+      else if (lvl === 3) m3++;
+      else if (lvl === 4) m4++;
+      else unknown++;
+      rows.push({ kind: 'cr', text: `Tiêu chí ${std.id}.${cr.num}: ${cr.name}`, lvl });
+    });
+  });
+  const attained = m1 + m2 + m3 + m4;
+  const cellStyle = { border:'1px solid var(--line)', padding:'6px 8px', textAlign:'center', fontSize:13 };
+  const mark = (on) => <td style={cellStyle}>{on ? <b style={{color:'var(--brand-600)'}}>✕</b> : ''}</td>;
+  return (
+    <div style={{overflowX:'auto',marginTop:12}}>
+      <table style={{width:'100%',borderCollapse:'collapse',fontFamily:"'Times New Roman',serif"}}>
+        <thead>
+          <tr style={{background:'var(--brand-50)'}}>
+            <th rowSpan={2} style={{...cellStyle,textAlign:'left',width:'38%'}}>Tiêu chuẩn / Tiêu chí</th>
+            <th rowSpan={2} style={{...cellStyle,width:'12%'}}>Không đạt</th>
+            <th colSpan={4} style={cellStyle}>Đạt</th>
+          </tr>
+          <tr style={{background:'var(--brand-50)'}}>
+            <th style={cellStyle}>Mức 1</th><th style={cellStyle}>Mức 2</th><th style={cellStyle}>Mức 3</th><th style={cellStyle}>Mức 4</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r, i) => r.kind === 'std' ? (
+            <tr key={i}><td colSpan={6} style={{...cellStyle,textAlign:'left',background:'#f1f5f9',fontWeight:600}}>{r.text}</td></tr>
+          ) : r.lvl === null ? (
+            <tr key={i}><td style={{...cellStyle,textAlign:'left'}}>{r.text}</td><td colSpan={5} style={{...cellStyle,color:'var(--faint)',fontStyle:'italic'}}>[chưa tự đánh giá]</td></tr>
+          ) : (
+            <tr key={i}>
+              <td style={{...cellStyle,textAlign:'left'}}>{r.text}</td>
+              {mark(r.lvl === 0)}{mark(r.lvl === 1)}{mark(r.lvl === 2)}{mark(r.lvl === 3)}{mark(r.lvl === 4)}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <p style={{marginTop:14,fontSize:13}}>
+        <b>Thống kê:</b> {total} tiêu chí · {attained} đạt · {notReached} không đạt · {unknown} chưa đánh giá
+      </p>
+      <p style={{fontSize:13}}>
+        <b>Kết luận sơ bộ:</b> {unknown === 0 && notReached === 0
+          ? <>Trường đạt <b style={{color:'var(--brand-600)'}}>Mức {m4 === total ? 4 : m3+m4 === total ? 3 : m2+m3+m4 === total ? 2 : 1}</b></>
+          : <i style={{color:'var(--faint)'}}>Cần hoàn thành tự đánh giá tất cả tiêu chí để có kết luận chính thức.</i>}
+      </p>
+    </div>
+  );
+}
+
+/* View nhỏ của Phụ lục trong center preview */
+function PhuLucView({ data }) {
+  const list = (data.sources?.evidenceList || '').trim();
+  if (!list) return <div className="doc-placeholder">Chưa có danh mục minh chứng. Bấm <b>🗂 Tư liệu</b> ở thanh tiêu đề để dán danh mục.</div>;
+  const lines = list.split('\n').map(l => l.trim()).filter(Boolean);
+  return (
+    <div style={{marginTop:10}}>
+      <p style={{fontSize:13.5,fontStyle:'italic',color:'var(--ink-muted)'}}>
+        Tổng {lines.length} minh chứng. Khi xuất Word, phụ lục sẽ được nhóm theo tiêu chí + bảng mã hóa tổng hợp.
+      </p>
+      <div style={{maxHeight:300,overflowY:'auto',border:'1px solid var(--line)',borderRadius:8,padding:12,background:'#f8fafc',fontFamily:"ui-monospace, 'Consolas', monospace",fontSize:12,lineHeight:1.8}}>
+        {lines.slice(0, 60).map((l, i) => <div key={i}>{l}</div>)}
+        {lines.length > 60 && <div style={{color:'var(--faint)',fontStyle:'italic',marginTop:8}}>… và {lines.length - 60} dòng khác (đầy đủ trong file Word xuất ra)</div>}
+      </div>
+    </div>
+  );
+}
+
+/* ============================================================
+   GUIDE MODAL — thay cho sidebar phải
+   Mở bằng nút "Hướng dẫn" / "Chỉ báo" ở topbar.
+   Nội dung phụ thuộc `active`:
+     - null        → hướng dẫn khởi đầu + căn cứ pháp lý
+     - tieuchi     → tabs Mức 1/2/3/4 + chỉ báo NGUYÊN VĂN + nút AI/Sửa
+     - coso/.../   → mô tả mục + nút AI/Sửa
+============================================================ */
+function GuideModal({ active, activeGen, data, generating, generateOne, startEdit, onClose }) {
+  const [mucTab, setMucTab] = useState(1);
+
+  const renderBody = () => {
+    if (!active) {
+      return (
+        <>
+          <div className="dp-head">
+            <div className="dp-kicker">Hướng dẫn</div>
+            <div className="dp-title">Bắt đầu từ đâu?</div>
+          </div>
+          <div className="dp-body" style={{fontSize:13,color:'var(--ink-muted)',lineHeight:1.7}}>
+            <p style={{marginBottom:10}}><b style={{color:'var(--ink)'}}>1.</b> Bấm <b>📍 tên trường</b> ở thanh tiêu đề để điền tên trường, HT, năm học, quy mô.</p>
+            <p style={{marginBottom:10}}><b style={{color:'var(--ink)'}}>2.</b> Bấm <b>🗂 Tư liệu</b> (biểu tượng thư mục) để dán danh mục minh chứng, báo cáo cũ (nếu có), link Drive.</p>
+            <p style={{marginBottom:10}}><b style={{color:'var(--ink)'}}>3.</b> Click vào từng mục ở dàn ý trái hoặc nhấn <b>✨ AI toàn bộ</b> để tạo báo cáo.</p>
+            <p style={{marginBottom:10}}><b style={{color:'var(--ink)'}}>4.</b> Khi đang ở một <b>tiêu chí</b>, nút này sẽ hiện <b>chỉ báo a/b/c theo từng Mức</b> để bạn tra cứu.</p>
+            <div className="divider"/>
+            <div style={{fontSize:12,color:'var(--faint)'}}>
+              <b>Căn cứ pháp lý:</b><br/>
+              • TT 17/2018/TT-BGDĐT (22/8/2018)<br/>
+              • <b>TT 22/2024/TT-BGDĐT</b> (10/12/2024) — sửa Điều 9<br/>
+              • CV 5932/BGDĐT-QLCL (28/12/2018)<br/>
+              • TT 13/2020 (sửa bởi TT 23/2024) — CSVC
+            </div>
+            <div className="divider"/>
+            <div style={{fontSize:12,color:'var(--amber)',background:'var(--amber-50)',padding:10,borderRadius:7,border:'1px solid #fde68a'}}>
+              <b>⚠ Lưu ý hành chính 2 cấp:</b> chỉ có xã/phường + tỉnh/thành phố. KHÔNG còn huyện, KHÔNG còn Phòng GD&ĐT. AI tự lược các cụm này khi gặp trong tư liệu cũ.
+            </div>
+          </div>
+        </>
+      );
+    }
+
+    if (active.kind === 'tieuchi') {
+      const cr = active.meta.criterion;
+      const stdId = active.meta.standardId;
+      const stdName = active.meta.standardName;
+      const availableMucs = [1,2,3,4].filter(m => cr.levels[m] && cr.levels[m].length > 0);
+      const currentMuc = availableMucs.includes(mucTab) ? mucTab : (availableMucs[0] || 1);
+      const chiBaos = cr.levels[currentMuc] || [];
+
+      return (
+        <>
+          <div className="dp-head">
+            <div className="dp-kicker">Tiêu chuẩn {stdId} · {stdName}</div>
+            <div className="dp-title">Tiêu chí {stdId}.{cr.num}</div>
+            <div style={{fontSize:13,color:'var(--ink-muted)',marginTop:4}}>{cr.name}</div>
+          </div>
+          <div className="dp-body">
+            <div className="dp-tabs">
+              {availableMucs.map(m => (
+                <div key={m} className={`dp-tab ${currentMuc===m?'active':''}`} onClick={() => setMucTab(m)}>Mức {m}</div>
+              ))}
+            </div>
+            <div className="dp-muc-desc">{MUC_DESC[currentMuc]}</div>
+            {chiBaos.length === 0 ? (
+              <div style={{fontSize:12.5,color:'var(--faint)',fontStyle:'italic',padding:10}}>Thông tư không quy định yêu cầu riêng ở mức này.</div>
+            ) : chiBaos.map((cb, i) => (
+              <div key={i} className="dp-chibao">{cb}</div>
+            ))}
+
+            <div className="dp-section-label">Trạng thái</div>
+            <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:14,flexWrap:'wrap'}}>
+              {activeGen?.status === 'done' && <span className="chip chip-ok">✓ Đã tạo</span>}
+              {activeGen?.status === 'generating' && <span className="chip chip-sky">◐ Đang tạo</span>}
+              {activeGen?.status === 'error' && <span className="chip chip-err">✗ Lỗi</span>}
+              {!activeGen && <span className="chip chip-warn">○ Chưa tạo</span>}
+              {activeGen?.updatedAt && <span style={{fontSize:11,color:'var(--faint)'}}>{new Date(activeGen.updatedAt).toLocaleString('vi-VN')}</span>}
+            </div>
+
+            <div style={{display:'flex',gap:8}}>
+              <button className="btn btn-primary" style={{flex:1}} disabled={!!generating} onClick={() => generateOne(active)}>
+                {generating === active.id ? <><ILoad className="w-4 h-4 animate-spin"/> AI đang viết…</> : <><ISpark className="w-4 h-4"/> {activeGen?.status === 'done' ? 'Tạo lại bằng AI' : 'Tạo bằng AI'}</>}
+              </button>
+              <button className="btn" onClick={() => startEdit(active.id)} disabled={!!generating}>
+                <IEdit className="w-4 h-4"/> Sửa tay
+              </button>
+            </div>
+          </div>
+        </>
+      );
+    }
+
+    // Computed sections — không có nút AI/Sửa
+    if (active.kind === 'computed') {
+      const computedGuides = {
+        bangtonghop: {
+          title: 'Bảng tổng hợp kết quả tự đánh giá',
+          hint: 'Bảng này được hệ thống TỰ TÍNH từ kết quả tự đánh giá của từng tiêu chí (parse cụm "Đạt Mức X" / "Không đạt" trong mục 5. Tự đánh giá của mỗi tiêu chí).',
+          note: 'Bạn không cần sinh bằng AI hay chỉnh tay. Muốn thay đổi bảng → chỉnh phần tự đánh giá ở từng tiêu chí.'
+        },
+        phuluc: {
+          title: 'Phần IV · Phụ lục — Danh mục minh chứng',
+          hint: 'Phụ lục được tự động tổng hợp từ danh mục minh chứng đã dán trong mục 🗂 Tư liệu. Khi xuất Word sẽ có: (1) Danh mục minh chứng nhóm theo tiêu chí; (2) Bảng mã hóa tổng hợp.',
+          note: 'Muốn sửa nội dung → bấm 🗂 Tư liệu ở thanh tiêu đề rồi sửa phần "Danh mục minh chứng".'
+        }
+      };
+      const cg = computedGuides[active.type];
+      return (
+        <>
+          <div className="dp-head">
+            <div className="dp-kicker">Tự tính · không cần AI</div>
+            <div className="dp-title">{cg.title}</div>
+          </div>
+          <div className="dp-body">
+            <div style={{fontSize:13,color:'var(--ink-muted)',lineHeight:1.65,padding:'12px 14px',background:'#f8fafc',borderRadius:7,border:'1px solid var(--line-soft)',marginBottom:10}}>{cg.hint}</div>
+            <div style={{fontSize:12.5,color:'var(--amber)',background:'var(--amber-50)',padding:'10px 12px',borderRadius:7,border:'1px solid #fde68a'}}>{cg.note}</div>
+          </div>
+        </>
+      );
+    }
+
+    const stdId = active.meta?.standardId;
+    const metaGuides = {
+      coso: { title: 'Phần I · Cơ sở dữ liệu', hint: 'Thông tin chung của nhà trường + cơ cấu tổ chức, quy mô 5 năm gần nhất (số lớp theo khối, học sinh, CB-GV-NV, CSVC). Không đánh giá — chỉ liệt kê dữ liệu. AI sẽ sinh bảng có mã [CẦN BỔ SUNG] ở ô thiếu — bạn điền số liệu thủ công sau.' },
+      datvande: { title: 'A. Đặt vấn đề', hint: 'Khái quát tình hình nhà trường, mục đích tự đánh giá, quy trình 7 bước theo CV 5932, phương pháp đánh giá.' },
+      modau: { title: `Tiêu chuẩn ${stdId} — Mở đầu`, hint: 'Đoạn giới thiệu tổng quan về Tiêu chuẩn trước khi vào các tiêu chí: vai trò, ý nghĩa, khái quát nội dung các tiêu chí thuộc tiêu chuẩn. Độ dài 150-250 từ, văn phong hành chính trang trọng.' },
+      'ketluan-tc': { title: `Tiêu chuẩn ${stdId} — Kết luận`, hint: 'Tổng kết sau khi đánh giá xong các tiêu chí thuộc Tiêu chuẩn: điểm mạnh tổng thể, điểm yếu, thống kê số tiêu chí đạt/không đạt theo từng Mức. AI sẽ đọc nội dung tự đánh giá của từng tiêu chí để tổng hợp.' },
+      ketluan: { title: 'Phần III · Kết luận chung', hint: 'Tổng hợp số lượng, tỷ lệ % chỉ báo & tiêu chí đạt/không đạt → mức đánh giá chung. Điểm mạnh, hạn chế, định hướng.' }
+    };
+    const guide = metaGuides[active.type] || { title: active.label, hint: '' };
+    return (
+      <>
+        <div className="dp-head">
+          <div className="dp-kicker">Mục mở đầu / kết thúc</div>
+          <div className="dp-title">{guide.title}</div>
+        </div>
+        <div className="dp-body">
+          <div style={{fontSize:13,color:'var(--ink-muted)',lineHeight:1.65,padding:'12px 14px',background:'#f8fafc',borderRadius:7,border:'1px solid var(--line-soft)'}}>{guide.hint}</div>
+
+          <div className="dp-section-label">Trạng thái</div>
+          <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:14}}>
+            {activeGen?.status === 'done' && <span className="chip chip-ok">✓ Đã tạo</span>}
+            {activeGen?.status === 'generating' && <span className="chip chip-sky">◐ Đang tạo</span>}
+            {activeGen?.status === 'error' && <span className="chip chip-err">✗ Lỗi</span>}
+            {!activeGen && <span className="chip chip-warn">○ Chưa tạo</span>}
+          </div>
+
+          <div style={{display:'flex',gap:8}}>
+            <button className="btn btn-primary" style={{flex:1}} disabled={!!generating} onClick={() => generateOne(active)}>
+              {generating === active.id ? <><ILoad className="w-4 h-4 animate-spin"/> AI đang viết…</> : <><ISpark className="w-4 h-4"/> {activeGen?.status === 'done' ? 'Tạo lại' : 'Tạo bằng AI'}</>}
+            </button>
+            <button className="btn" onClick={() => startEdit(active.id)} disabled={!!generating}>
+              <IEdit className="w-4 h-4"/> Sửa tay
+            </button>
+          </div>
+        </div>
+      </>
+    );
+  };
+
+  return (
+    <div className="overlay fadein" onClick={onClose}>
+      <div className="modal" onClick={e => e.stopPropagation()} style={{maxWidth:560}}>
+        <div className="modal-h">
+          <div style={{display:'flex',alignItems:'center',gap:10}}>
+            <IInfo className="w-5 h-5"/>
+            <div className="display" style={{fontSize:18,fontWeight:600}}>
+              {active ? (active.kind === 'tieuchi' ? 'Chỉ báo tiêu chí' : active.kind === 'computed' ? 'Mục tự tính' : 'Hướng dẫn mục') : 'Hướng dẫn'}
+            </div>
+          </div>
+          <button className="btn btn-icon btn-ghost" onClick={onClose}><IX className="w-4 h-4"/></button>
+        </div>
+        <div className="modal-b">
+          {renderBody()}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ============================================================
+   MODALS
+============================================================ */
+function SchoolInfoModal({ schoolInfo, onSave, onClose }) {
+  const [info, setInfo] = useState({ ...schoolInfo });
+  const upd = (k, v) => setInfo(p => ({ ...p, [k]: v }));
+
+  return (
+    <div className="overlay fadein" onClick={onClose}>
+      <div className="modal modal-lg" onClick={e => e.stopPropagation()}>
+        <div className="modal-h">
+          <div style={{display:'flex',alignItems:'center',gap:10}}>
+            <ISchool className="w-5 h-5"/>
+            <div className="display" style={{fontSize:18,fontWeight:600}}>Thông tin trường Tiểu học</div>
+          </div>
+          <button className="btn btn-icon btn-ghost" onClick={onClose}><IX className="w-4 h-4"/></button>
+        </div>
+        <div className="modal-b">
+          <div className="field">
+            <label>Tên trường <span className="req">*</span></label>
+            <input value={info.name} onChange={e => upd('name', e.target.value)} placeholder="VD: Trường Tiểu học Diễn Liên"/>
+            <div className="hint">Nhập đầy đủ gồm chữ "Trường". VD: "Trường Tiểu học Diễn Liên".</div>
+          </div>
+          <div className="grid2">
+            <div className="field"><label>Hiệu trưởng <span className="req">*</span></label>
+              <input value={info.principal} onChange={e => upd('principal', e.target.value)} placeholder="VD: Nguyễn Văn A"/>
+            </div>
+            <div className="field"><label>Cán bộ chuyên trách KĐCLGD</label>
+              <input value={info.tdgCadre} onChange={e => upd('tdgCadre', e.target.value)} placeholder="VD: Phó hiệu trưởng - Trần Thị B"/>
+            </div>
+          </div>
+          <div className="grid2">
+            <div className="field"><label>Địa chỉ cụ thể</label>
+              <input value={info.address} onChange={e => upd('address', e.target.value)} placeholder="Thôn/xóm, đường (nếu có)"/>
+            </div>
+            <div className="field"><label>Xã/Phường <span className="req">*</span></label>
+              <input value={info.ward} onChange={e => upd('ward', e.target.value)} placeholder="VD: Xã Quảng Châu"/>
+            </div>
+          </div>
+          <div className="grid3">
+            <div className="field"><label>Tỉnh/Thành phố <span className="req">*</span></label>
+              <input value={info.province} onChange={e => upd('province', e.target.value)} placeholder="VD: Tỉnh Nghệ An"/>
+            </div>
+            <div className="field"><label>Điện thoại</label>
+              <input value={info.phone} onChange={e => upd('phone', e.target.value)}/>
+            </div>
+            <div className="field"><label>Email</label>
+              <input value={info.email} onChange={e => upd('email', e.target.value)}/>
+            </div>
+          </div>
+          <div className="grid3">
+            <div className="field"><label>Website</label>
+              <input value={info.website} onChange={e => upd('website', e.target.value)}/>
+            </div>
+            <div className="field"><label>Năm thành lập</label>
+              <input value={info.establishedYear} onChange={e => upd('establishedYear', e.target.value)} placeholder="VD: 1995"/>
+            </div>
+            <div className="field"><label>Mức đánh giá đăng ký</label>
+              <select value={info.mucDangKy || 2} onChange={e => upd('mucDangKy', Number(e.target.value))}>
+                <option value={1}>Mức 1 — tối thiểu</option>
+                <option value={2}>Mức 2 — KĐCLGD cấp độ 2</option>
+                <option value={3}>Mức 3 — cấp độ 3 / Chuẩn QG Mức 1</option>
+                <option value={4}>Mức 4 — Chuẩn QG Mức 2</option>
+              </select>
+            </div>
+          </div>
+          <div className="grid2">
+            <div className="field"><label>Năm học (từ)</label>
+              <input type="number" value={info.academicYearFrom} onChange={e => upd('academicYearFrom', Number(e.target.value))}/>
+            </div>
+            <div className="field"><label>Năm học (đến)</label>
+              <input type="number" value={info.academicYearTo} onChange={e => upd('academicYearTo', Number(e.target.value))}/>
+            </div>
+          </div>
+
+          <div style={{fontSize:12,fontWeight:600,color:'var(--ink-muted)',marginTop:12,marginBottom:6,letterSpacing:'0.04em',textTransform:'uppercase'}}>Quy mô năm học</div>
+          <div className="grid2">
+            <div className="field"><label>Số lớp</label>
+              <input type="number" value={info.numClasses} onChange={e => upd('numClasses', e.target.value)} placeholder="VD: 24"/>
+            </div>
+            <div className="field"><label>Tổng số học sinh</label>
+              <input type="number" value={info.numStudents} onChange={e => upd('numStudents', e.target.value)} placeholder="VD: 820"/>
+            </div>
+          </div>
+          <div className="grid2">
+            <div className="field"><label>Giáo viên</label>
+              <input type="number" value={info.numTeachers} onChange={e => upd('numTeachers', e.target.value)} placeholder="VD: 42"/>
+            </div>
+            <div className="field"><label>Nhân viên</label>
+              <input type="number" value={info.numStaff} onChange={e => upd('numStaff', e.target.value)} placeholder="VD: 8"/>
+            </div>
+          </div>
+
+          <div style={{display:'flex',alignItems:'center',gap:8,marginTop:8,padding:10,background:'#fffbeb',borderRadius:7,border:'1px solid #fde68a'}}>
+            <input id="vkk" type="checkbox" checked={!!info.isVungKhoKhan} onChange={e => upd('isVungKhoKhan', e.target.checked)}/>
+            <label htmlFor="vkk" style={{fontSize:13,cursor:'pointer',margin:0}}>Trường thuộc <b>xã có điều kiện kinh tế-xã hội đặc biệt khó khăn</b> (áp tỷ lệ % vùng khó khăn cho Tiêu chí 2.2 và 5.5)</label>
+          </div>
+
+          {/* Hội đồng Tự đánh giá — tuỳ biến danh sách thành viên */}
+          <div style={{fontSize:12,fontWeight:600,color:'var(--ink-muted)',marginTop:18,marginBottom:8,letterSpacing:'0.04em',textTransform:'uppercase'}}>Hội đồng Tự đánh giá</div>
+          <div style={{fontSize:11.5,color:'var(--faint)',marginBottom:8}}>
+            Theo CV 5932: Hội đồng gồm 7-15 thành viên (Chủ tịch là HT, 1-2 Phó Chủ tịch, 1 Thư ký, các Ủy viên). Danh sách này được in vào trang 2 của báo cáo.
+          </div>
+          <div style={{maxHeight:280,overflowY:'auto',border:'1px solid var(--line)',borderRadius:8,padding:8,background:'#f8fafc'}}>
+            {(info.council || []).map((m, i) => (
+              <div key={i} style={{display:'grid',gridTemplateColumns:'24px 1.1fr 1.2fr 1fr 28px',gap:6,alignItems:'center',marginBottom:6}}>
+                <div style={{fontSize:11.5,color:'var(--faint)',textAlign:'center'}}>{i+1}</div>
+                <input value={m.name} onChange={e => {
+                  const next = [...(info.council || [])]; next[i] = { ...next[i], name: e.target.value };
+                  setInfo(p => ({ ...p, council: next }));
+                }} placeholder="Họ và tên" style={{padding:'5px 8px',border:'1px solid var(--line)',borderRadius:5,fontSize:12.5,background:'#fff'}}/>
+                <input value={m.position} onChange={e => {
+                  const next = [...(info.council || [])]; next[i] = { ...next[i], position: e.target.value };
+                  setInfo(p => ({ ...p, council: next }));
+                }} placeholder="Chức vụ (VD: Hiệu trưởng)" style={{padding:'5px 8px',border:'1px solid var(--line)',borderRadius:5,fontSize:12,background:'#fff'}}/>
+                <input value={m.role} onChange={e => {
+                  const next = [...(info.council || [])]; next[i] = { ...next[i], role: e.target.value };
+                  setInfo(p => ({ ...p, council: next }));
+                }} placeholder="Nhiệm vụ (VD: Ủy viên)" style={{padding:'5px 8px',border:'1px solid var(--line)',borderRadius:5,fontSize:12,background:'#fff'}}/>
+                <button className="btn btn-icon btn-xs btn-ghost" title="Xoá dòng"
+                  onClick={() => setInfo(p => ({ ...p, council: (p.council || []).filter((_, idx) => idx !== i) }))}>
+                  <ITrash className="w-3.5 h-3.5"/>
+                </button>
+              </div>
+            ))}
+            <div style={{display:'flex',gap:6,marginTop:6}}>
+              <button className="btn btn-xs"
+                onClick={() => setInfo(p => ({ ...p, council: [...(p.council || []), { name:'', position:'', role:'Ủy viên' }] }))}>
+                <IPlus className="w-3 h-3"/> Thêm thành viên
+              </button>
+              <button className="btn btn-xs btn-ghost"
+                onClick={() => { if (confirm('Khôi phục mẫu Hội đồng mặc định (13 thành viên)? Dữ liệu đang nhập sẽ bị ghi đè.')) setInfo(p => ({ ...p, council: DEFAULT_COUNCIL.map(m => ({ ...m })) })); }}>
+                <IRefresh className="w-3 h-3"/> Khôi phục mẫu
+              </button>
+            </div>
+          </div>
+        </div>
+        <div className="modal-f">
+          <button className="btn btn-ghost" onClick={onClose}>Huỷ</button>
+          <button className="btn btn-primary" onClick={() => onSave(info)} disabled={!info.name || !info.ward || !info.province}><ISave className="w-4 h-4"/> Lưu thông tin</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SourcesModal({ sources, settings, onSave, onClose }) {
+  const [s, setS] = useState({ ...sources });
+  const [testingIdx, setTestingIdx] = useState(null);
+
+  const addLink = () => setS(p => ({ ...p, driveLinks: [...(p.driveLinks || []), { type: 'minhchung', url: '', desc: '' }] }));
+  const updLink = (i, k, v) => setS(p => ({ ...p, driveLinks: p.driveLinks.map((l, idx) => idx === i ? { ...l, [k]: v } : l) }));
+  const delLink = (i) => setS(p => ({ ...p, driveLinks: p.driveLinks.filter((_, idx) => idx !== i) }));
+
+  const testLink = async (i) => {
+    setTestingIdx(i);
+    try {
+      const r = await callBackend(settings.appsScriptUrl, { action: 'readDriveFolder', folderUrl: s.driveLinks[i].url });
+      alert(`✅ Đọc được ${r.files || 0} file từ "${r.folderName || 'thư mục'}"\n\nMẫu 1500 ký tự đầu:\n\n${(r.content || '').slice(0, 1500)}`);
+    } catch (e) { alert('❌ ' + e.message); }
+    setTestingIdx(null);
+  };
+
+  return (
+    <div className="overlay fadein" onClick={onClose}>
+      <div className="modal modal-lg" onClick={e => e.stopPropagation()}>
+        <div className="modal-h">
+          <div style={{display:'flex',alignItems:'center',gap:10}}>
+            <IFolder className="w-5 h-5"/>
+            <div className="display" style={{fontSize:18,fontWeight:600}}>Tư liệu nguồn cho AI</div>
+          </div>
+          <button className="btn btn-icon btn-ghost" onClick={onClose}><IX className="w-4 h-4"/></button>
+        </div>
+        <div className="modal-b">
+          <div style={{padding:10,background:'var(--sky-50)',border:'1px solid #bae6fd',borderRadius:8,color:'var(--sky)',fontSize:12.5,lineHeight:1.55,marginBottom:14}}>
+            <b>💡 Càng nhiều tư liệu, AI viết càng sát.</b> Ba loại: (1) danh mục minh chứng — để AI dùng đúng mã [Hx-x.x-xx]; (2) báo cáo cũ hoặc tóm tắt đặc điểm trường; (3) link Google Drive chứa hồ sơ số.
+          </div>
+
+          <div className="field">
+            <label><IDoc className="w-3.5 h-3.5 inline-block mr-1"/>Báo cáo tự đánh giá năm trước / Tóm tắt đặc điểm trường</label>
+            <textarea rows={10} value={s.oldReport} onChange={e => setS(p => ({ ...p, oldReport: e.target.value }))}
+              placeholder={"Dán báo cáo cũ, hoặc tóm tắt: quá trình hình thành, thành tích nổi bật, đội ngũ, CSVC, thuận lợi, khó khăn…"}
+              style={{fontFamily:"'Times New Roman',serif"}}/>
+            <div className="hint">Số ký tự: {(s.oldReport || '').length.toLocaleString('vi-VN')} · Khuyến nghị ≤ 20.000 · Nếu có cụm "Phòng GD&ĐT", "UBND Huyện" — AI sẽ tự lược/thay thế.</div>
+          </div>
+
+          <div className="field">
+            <label><IList className="w-3.5 h-3.5 inline-block mr-1"/>Danh mục minh chứng (mỗi dòng một minh chứng, có mã [Hx-x.x-xx])</label>
+            <textarea rows={12} value={s.evidenceList} onChange={e => setS(p => ({ ...p, evidenceList: e.target.value }))}
+              style={{fontFamily:'ui-monospace,monospace',fontSize:12}}/>
+            <div className="hint">Đã nạp sẵn 30+ mã minh chứng chuẩn cho trường Tiểu học theo CV 5932.</div>
+          </div>
+
+          <div className="field">
+            <label><ILink className="w-3.5 h-3.5 inline-block mr-1"/>Liên kết Google Drive (tuỳ chọn) — AI đọc nội dung khi tạo</label>
+            <div style={{display:'flex',flexDirection:'column',gap:6}}>
+              {(s.driveLinks || []).map((l, i) => (
+                <div key={i} style={{display:'flex',gap:6,alignItems:'stretch'}}>
+                  <select value={l.type} onChange={e => updLink(i, 'type', e.target.value)}
+                    style={{padding:'6px 8px',border:'1px solid var(--line)',borderRadius:6,fontSize:12,background:'#fff'}}>
+                    <option value="tieuchi">Bộ tiêu chí</option>
+                    <option value="minhchung">Minh chứng</option>
+                    <option value="phieu">Phiếu đánh giá</option>
+                    <option value="khac">Khác</option>
+                  </select>
+                  <input value={l.desc} onChange={e => updLink(i, 'desc', e.target.value)} placeholder="Mô tả ngắn"
+                    style={{flex:1,padding:'6px 10px',border:'1px solid var(--line)',borderRadius:6,fontSize:12.5}}/>
+                  <input value={l.url} onChange={e => updLink(i, 'url', e.target.value)} placeholder="https://drive.google.com/…"
+                    style={{flex:2,padding:'6px 10px',border:'1px solid var(--line)',borderRadius:6,fontSize:11.5,fontFamily:'ui-monospace,monospace'}}/>
+                  <button className="btn btn-icon btn-xs" disabled={!l.url || testingIdx === i} onClick={() => testLink(i)} title="Kiểm tra đọc">
+                    {testingIdx === i ? <ILoad className="w-3.5 h-3.5 animate-spin"/> : <IEye className="w-3.5 h-3.5"/>}
+                  </button>
+                  <button className="btn btn-icon btn-xs btn-ghost" onClick={() => delLink(i)} title="Xoá"><ITrash className="w-3.5 h-3.5"/></button>
+                </div>
+              ))}
+              <button className="btn btn-xs" onClick={addLink} style={{alignSelf:'flex-start'}}><IPlus className="w-3 h-3"/> Thêm link Drive</button>
+            </div>
+          </div>
+        </div>
+        <div className="modal-f">
+          <button className="btn btn-ghost" onClick={onClose}>Huỷ</button>
+          <button className="btn btn-primary" onClick={() => onSave(s)}><ISave className="w-4 h-4"/> Lưu tư liệu</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CloudModal({ settings, onLoad, onClose }) {
+  const [list, setList] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState(null);
+
+  const fetchList = async () => {
+    setLoading(true); setErr(null);
+    try {
+      const r = await callBackend(settings.appsScriptUrl, { action: 'listReports' });
+      setList(r.reports || []);
+    } catch (e) { setErr(e.message); }
+    setLoading(false);
+  };
+
+  useEffect(() => { fetchList(); }, []);
+
+  const del = async (rid) => {
+    if (!confirm('Xoá báo cáo này? Không thể hoàn tác.')) return;
+    try { await callBackend(settings.appsScriptUrl, { action: 'deleteReport', reportId: rid }); fetchList(); }
+    catch (e) { alert('❌ ' + e.message); }
+  };
+
+  return (
+    <div className="overlay fadein" onClick={onClose}>
+      <div className="modal modal-lg" onClick={e => e.stopPropagation()}>
+        <div className="modal-h">
+          <div style={{display:'flex',alignItems:'center',gap:10}}>
+            <ICloud className="w-5 h-5"/>
+            <div className="display" style={{fontSize:18,fontWeight:600}}>Báo cáo trên Google Drive</div>
+          </div>
+          <div style={{display:'flex',gap:4}}>
+            <button className="btn btn-icon btn-ghost" onClick={fetchList} title="Tải lại"><IRefresh className="w-4 h-4"/></button>
+            <button className="btn btn-icon btn-ghost" onClick={onClose}><IX className="w-4 h-4"/></button>
+          </div>
+        </div>
+        <div className="modal-b">
+          {loading && <div style={{textAlign:'center',padding:40,color:'var(--ink-muted)'}}><ILoad className="w-5 h-5 animate-spin inline-block mr-2"/> Đang tải…</div>}
+          {err && <div style={{padding:12,background:'var(--rose-50)',border:'1px solid #fecaca',borderRadius:8,color:'var(--rose)',fontSize:13}}>❌ {err}</div>}
+          {list && list.length === 0 && <div style={{textAlign:'center',padding:40,color:'var(--ink-muted)'}}>Chưa có báo cáo nào. Hãy bấm <b>☁ Lưu Drive</b> sau khi soạn xong.</div>}
+          {list && list.length > 0 && (
+            <div style={{display:'flex',flexDirection:'column',gap:6}}>
+              {list.map(r => (
+                <div key={r.reportId} style={{display:'flex',alignItems:'center',gap:10,padding:12,border:'1px solid var(--line)',borderRadius:8,background:'#fff'}}>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontWeight:600,fontSize:13.5}}>{r.schoolName || '(chưa đặt tên)'} · <span style={{color:'var(--brand-600)'}}>{r.academicYear}</span></div>
+                    <div style={{fontSize:11.5,color:'var(--ink-muted)',marginTop:2}}>
+                      {r.schoolType} · {r.province} · HT: {r.principal} · {r.progress} mục · Cập nhật: {r.updatedAt ? new Date(r.updatedAt).toLocaleString('vi-VN') : '—'}
+                    </div>
+                  </div>
+                  <button className="btn btn-xs btn-soft" onClick={() => onLoad(r.reportId)}><ICloudDown className="w-3.5 h-3.5"/> Mở</button>
+                  <button className="btn btn-icon btn-xs btn-ghost" onClick={() => del(r.reportId)} title="Xoá"><ITrash className="w-3.5 h-3.5"/></button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ============================================================
+   MOUNT
+============================================================ */
+function boot() {
+  try {
+    const b = document.getElementById('boot');
+    if (b) b.style.display = 'none';
+    const root = document.getElementById('root');
+    if (!root) { alert('Lỗi: không tìm thấy #root'); return; }
+    ReactDOM.createRoot(root).render(<App/>);
+  } catch (err) {
+    document.body.innerHTML = '<div style="padding:2em;color:#b91c1c;font-family:system-ui"><h2>❌ Lỗi khởi tạo</h2><pre style="white-space:pre-wrap;background:#fee;padding:1em;border-radius:8px">' + (err.stack || err.message || err) + '</pre></div>';
+  }
+}
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+else boot();
+</script>
+</body>
+</html>
