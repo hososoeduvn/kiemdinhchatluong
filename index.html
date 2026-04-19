@@ -1119,11 +1119,13 @@ ${fmtSchool(info)}`;
 
 const buildUserPrompt = (section, data) => {
   const { type, meta } = section;
-  const oldRep = data.sources.oldReport ? `\n\n---BÁO CÁO/TƯ LIỆU CŨ (có thể chứa cấu trúc hành chính cũ — hãy lược bỏ/thay thế)---\n${data.sources.oldReport.slice(0, 8000)}\n---HẾT---` : '';
-  const ev = data.sources.evidenceList ? `\n\n---DANH MỤC MINH CHỨNG (dùng đúng mã)---\n${data.sources.evidenceList.slice(0, 6000)}\n---HẾT---` : '';
+  const srcs = data.sources || {};
+  const info = data.schoolInfo || {};
+  const oldRep = srcs.oldReport ? `\n\n---BÁO CÁO/TƯ LIỆU CŨ (có thể chứa cấu trúc hành chính cũ — hãy lược bỏ/thay thế)---\n${srcs.oldReport.slice(0, 8000)}\n---HẾT---` : '';
+  const ev = srcs.evidenceList ? `\n\n---DANH MỤC MINH CHỨNG (dùng đúng mã)---\n${srcs.evidenceList.slice(0, 6000)}\n---HẾT---` : '';
 
   if (type === 'coso') {
-    const curTo = data.schoolInfo.academicYearTo || new Date().getFullYear();
+    const curTo = info.academicYearTo || new Date().getFullYear();
     const yrs = [curTo-4, curTo-3, curTo-2, curTo-1, curTo].map(y => `${y-1}-${y}`).join(' | ');
     return `Viết PHẦN I: CƠ SỞ DỮ LIỆU của Báo cáo Tự đánh giá trường tiểu học.
 
@@ -1179,7 +1181,7 @@ Viết liền mạch thành 2-3 đoạn văn, độ dài 150-250 từ. Văn phon
 
   if (type === 'ketluan-tc') {
     const { standardId, standardName } = meta;
-    const std = STANDARDS.find(s => s.id === standardId);
+    const std = STANDARDS.find(s => s.id === standardId) || { criteria: [] };
     const tcEvals = std.criteria.map(cr => {
       const c = (data.generated||{})[`tc-${standardId}-${cr.num}`]?.content || '';
       const m = c.match(/(?:\*\*)?5\.?\s*Tự\s*đánh\s*giá[:\*]*\s*([^\n]+)/i) || c.match(/Tự đánh giá[:\s]+([^\n.]+)/i);
@@ -1232,7 +1234,7 @@ Văn phong trang trọng, mạch lạc. Độ dài 500-700 từ.${oldRep}`;
       if (!arr || arr.length === 0) return `**Mức ${lvl}:** (Thông tư không quy định thêm yêu cầu riêng cho tiêu chí này ở Mức ${lvl})`;
       return `**Mức ${lvl}** (chỉ báo NGUYÊN VĂN theo Thông tư — KHÔNG sửa đổi):\n${arr.join('\n')}`;
     };
-    const mucRegister = data.schoolInfo.mucDangKy || 2;
+    const mucRegister = info.mucDangKy || 2;
     const blocks = [];
     for (let m = 1; m <= 4; m++) {
       if (m > mucRegister && (!levels[m] || levels[m].length === 0)) continue;
@@ -1308,7 +1310,7 @@ Cuối báo cáo, để trống 1 dòng rồi ghi phần ký (căn giữa):
 HIỆU TRƯỞNG
 (Ký tên, đóng dấu)
 
-${data.schoolInfo.principal || '...'}
+${(data.schoolInfo||{}).principal || '...'}
 
 Độ dài 400-600 từ. Số liệu chưa có thì ghi [CẦN BỔ SUNG].`;
   }
@@ -1674,7 +1676,9 @@ function App() {
   useEffect(() => { setMobileSidebar(false); }, [workspace, activeId]);
 
   const sections = useMemo(() => buildSectionsList(), []);
-  const yearStr = `${data.schoolInfo.academicYearFrom}-${data.schoolInfo.academicYearTo}`;
+  const si = data.schoolInfo || {};  // defensive fallback — luôn dùng si thay vì data.schoolInfo
+  const curYearNow = new Date().getFullYear();
+  const yearStr = `${si.academicYearFrom || curYearNow - 1}-${si.academicYearTo || curYearNow}`;
 
   useEffect(() => { const t = setTimeout(() => saveLS(LS_KEY, data), 800); return () => clearTimeout(t); }, [data]);
   useEffect(() => saveLS(LS_SETTINGS, settings), [settings]);
@@ -1720,7 +1724,7 @@ function App() {
     try {
       const sys = systemPromptBase(data.schoolInfo);
       const usr = buildUserPrompt(section, data);
-      const driveUrls = (data.sources.driveLinks || []).map(l => l.url).filter(Boolean);
+      const driveUrls = ((data.sources || {}).driveLinks || []).map(l => l.url).filter(Boolean);
       const res = await callBackend(settings.appsScriptUrl, { action: 'ai', systemPrompt: sys, userPrompt: usr, driveFolderUrls: driveUrls });
       const content = sanitize(res.content);
       setData(d => ({ ...d, generated: { ...d.generated, [section.id]: { status: 'done', content, updatedAt: new Date().toISOString() } } }));
@@ -1744,7 +1748,7 @@ function App() {
   };
 
   const saveToCloud = async () => {
-    if (!data.schoolInfo.name) { alert('Vui lòng điền tên trường trước khi lưu.'); setModal('school'); return; }
+    if (!(data.schoolInfo||{}).name) { alert('Vui lòng điền tên trường trước khi lưu.'); setModal('school'); return; }
     const id = data.reportId || genReportId(data.schoolInfo);
     showToast('☁ Đang tải lên Drive…');
     try {
@@ -1757,7 +1761,7 @@ function App() {
   const loadFromCloud = async (rid) => {
     try {
       const res = await callBackend(settings.appsScriptUrl, { action: 'loadReport', reportId: rid });
-      setData(res.content);
+      setData(migrateReport(res.content));  // migrate phòng trường hợp data Drive cũ thiếu field
       setModal(null);
       showToast('✓ Đã tải báo cáo');
     } catch (e) { showToast('❌ ' + e.message); }
@@ -1777,7 +1781,7 @@ function App() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `BaoCaoTDG_TH_${(data.schoolInfo.name || 'Truong').replace(/\s+/g, '_')}_${yearStr}.doc`;
+    a.download = `BaoCaoTDG_TH_${((data.schoolInfo||{}).name || 'Truong').replace(/\s+/g, '_')}_${yearStr}.doc`;
     a.click();
     URL.revokeObjectURL(url);
     showToast('⬇ Đang tải xuống file Word');
@@ -1809,7 +1813,7 @@ function App() {
         <div style={{flex:1,display:'flex',alignItems:'center',justifyContent:'flex-end',gap:10,paddingRight:6}}>
           <button className="sch-pill" onClick={() => setModal('school')} title="Chỉnh thông tin trường">
             <ISchool className="w-3.5 h-3.5"/>
-            <span style={{fontWeight:500,maxWidth:200,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{data.schoolInfo.name || 'Chưa đặt tên trường'}</span>
+            <span style={{fontWeight:500,maxWidth:200,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{(data.schoolInfo||{}).name || 'Chưa đặt tên trường'}</span>
             <span style={{opacity:0.7}}>· {yearStr}</span>
           </button>
         </div>
@@ -2021,7 +2025,7 @@ function OutlineSidebar({ standards, data, ui, setUi, activeId, onClick, generat
    DOCUMENT VIEW
 ============================================================ */
 function DocumentView({ data, standards, sections, activeId, setActiveId, editing, editBuf, setEditBuf, startEdit, saveEdit, cancelEdit, generating, generateOne, yearStr }) {
-  const info = data.schoolInfo;
+  const info = data.schoolInfo || {};
 
   const renderBody = (md) => {
     if (!md) return <div className="doc-placeholder">Chưa có nội dung. Dùng nút <b>✨ Tạo bằng AI</b> ở panel bên phải, hoặc bấm <b>Sửa</b> để viết tay.</div>;
@@ -2394,7 +2398,7 @@ function DashboardWorkspace({ data, setData, standards, sections, aiSections, se
     <div className="ws-main">
       <div className="ws-wrap">
         <h1 className="ws-title">Tổng quan · {info.name || 'Chưa đặt tên trường'}</h1>
-        <p className="ws-subtitle">Quy trình 7 bước tự đánh giá theo CV 5932/BGDĐT-QLCL · Năm học {data.schoolInfo.academicYearFrom}-{data.schoolInfo.academicYearTo}</p>
+        <p className="ws-subtitle">Quy trình 7 bước tự đánh giá theo CV 5932/BGDĐT-QLCL · Năm học {(data.schoolInfo||{}).academicYearFrom}-{(data.schoolInfo||{}).academicYearTo}</p>
 
         {/* 4 stat cards */}
         <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:12,marginBottom:20}}>
