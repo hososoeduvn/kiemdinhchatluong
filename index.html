@@ -1181,7 +1181,7 @@ Viết liền mạch thành 2-3 đoạn văn, độ dài 150-250 từ. Văn phon
     const { standardId, standardName } = meta;
     const std = STANDARDS.find(s => s.id === standardId);
     const tcEvals = std.criteria.map(cr => {
-      const c = data.generated[`tc-${standardId}-${cr.num}`]?.content || '';
+      const c = (data.generated||{})[`tc-${standardId}-${cr.num}`]?.content || '';
       const m = c.match(/(?:\*\*)?5\.?\s*Tự\s*đánh\s*giá[:\*]*\s*([^\n]+)/i) || c.match(/Tự đánh giá[:\s]+([^\n.]+)/i);
       const result = m ? m[1].replace(/\*+/g, '').trim().slice(0, 120) : '[chưa có tự đánh giá]';
       return `- Tiêu chí ${standardId}.${cr.num} (${cr.name}): ${result}`;
@@ -1541,7 +1541,7 @@ const buildBangTongHopHtml = (data) => {
   STANDARDS.forEach(std => {
     h += `<tr><td colspan="6" style="background:#f1f5f9;font-weight:bold">Tiêu chuẩn ${std.id}: ${std.name}</td></tr>`;
     std.criteria.forEach(cr => {
-      const lvl = extractSelfAssessLevel(data.generated[`tc-${std.id}-${cr.num}`]?.content);
+      const lvl = extractSelfAssessLevel((data.generated||{})[`tc-${std.id}-${cr.num}`]?.content);
       stats.total++;
       const mark = (c) => `<td style="text-align:center">${c ? '✕' : ''}</td>`;
       h += `<tr>`;
@@ -1685,11 +1685,11 @@ function App() {
   // Tiến độ chỉ tính các section cần AI sinh (bỏ qua bangtonghop + phuluc vì tự tính)
   const aiSections = sections.filter(s => s.kind !== 'computed');
   const totalSections = aiSections.length;
-  const doneSections = aiSections.filter(s => data.generated[s.id]?.status === 'done').length;
+  const doneSections = aiSections.filter(s => (data.generated||{})[s.id]?.status === 'done').length;
   const pct = Math.round((doneSections / totalSections) * 100);
 
   const active = useMemo(() => sections.find(s => s.id === activeId), [activeId, sections]);
-  const activeGen = activeId ? data.generated[activeId] : null;
+  const activeGen = activeId ? (data.generated||{})[activeId] : null;
 
   const onOutlineClick = (id) => {
     setActiveId(id);
@@ -1701,7 +1701,7 @@ function App() {
     }, 50);
   };
 
-  const startEdit = (id) => { setEditing(id); setEditBuf(data.generated[id]?.content || ''); };
+  const startEdit = (id) => { setEditing(id); setEditBuf((data.generated||{})[id]?.content || ''); };
   const saveEdit = () => {
     if (!editing) return;
     setData(d => ({ ...d, generated: { ...d.generated, [editing]: { status: 'done', content: editBuf, updatedAt: new Date().toISOString() } } }));
@@ -1737,7 +1737,7 @@ function App() {
     const aiSections = sections.filter(s => s.kind !== 'computed');
     if (!confirm(`Tạo TOÀN BỘ ${aiSections.length} phần bằng AI? Quá trình mất 5-15 phút. Có thể dừng giữa chừng.`)) return;
     for (const s of aiSections) {
-      if (data.generated[s.id]?.status === 'done') continue;
+      if ((data.generated||{})[s.id]?.status === 'done') continue;
       await generateOne(s);
     }
     showToast('🎉 Hoàn thành tạo toàn bộ báo cáo');
@@ -1925,7 +1925,7 @@ function App() {
 function OutlineSidebar({ standards, data, ui, setUi, activeId, onClick, generating, search, setSearch, pct, done, total, onNew, mobileOpen }) {
   const statusOf = (id) => {
     if (generating === id) return 'gen';
-    const g = data.generated[id];
+    const g = (data.generated||{})[id];
     if (g?.status === 'done') return 'done';
     if (g?.status === 'error') return 'err';
     return '';
@@ -1969,9 +1969,9 @@ function OutlineSidebar({ standards, data, ui, setUi, activeId, onClick, generat
           if (search && visible.length === 0) return null;
           const modauId = `std-${std.id}-modau`;
           const ketluanId = `std-${std.id}-ketluan`;
-          const doneCr = std.criteria.filter(cr => data.generated[`tc-${std.id}-${cr.num}`]?.status === 'done').length
-            + (data.generated[modauId]?.status === 'done' ? 1 : 0)
-            + (data.generated[ketluanId]?.status === 'done' ? 1 : 0);
+          const doneCr = std.criteria.filter(cr => (data.generated||{})[`tc-${std.id}-${cr.num}`]?.status === 'done').length
+            + ((data.generated||{})[modauId]?.status === 'done' ? 1 : 0)
+            + ((data.generated||{})[ketluanId]?.status === 'done' ? 1 : 0);
           const totalCr = std.criteria.length + 2;
           return (
             <div key={std.id}>
@@ -2043,7 +2043,7 @@ function DocumentView({ data, standards, sections, activeId, setActiveId, editin
   };
 
   const SectionBlock = ({ section, children }) => {
-    const g = data.generated[section.id];
+    const g = (data.generated||{})[section.id];
     const isEditing = editing === section.id;
     const isGenerating = generating === section.id;
     const isActive = activeId === section.id;
@@ -2196,7 +2196,7 @@ function BangTongHopView({ data }) {
   STANDARDS.forEach(std => {
     rows.push({ kind: 'std', text: `Tiêu chuẩn ${std.id}: ${std.name}` });
     std.criteria.forEach(cr => {
-      const lvl = extractSelfAssessLevel(data.generated[`tc-${std.id}-${cr.num}`]?.content);
+      const lvl = extractSelfAssessLevel((data.generated||{})[`tc-${std.id}-${cr.num}`]?.content);
       total++;
       if (lvl === 0) notReached++;
       else if (lvl === 1) m1++;
@@ -2291,13 +2291,13 @@ const isStepAutoDone = (stepId, data) => {
     let withLevel = 0, total = 0;
     STANDARDS.forEach(s => s.criteria.forEach(cr => {
       total++;
-      if (extractSelfAssessLevel(data.generated[`tc-${s.id}-${cr.num}`]?.content) !== null) withLevel++;
+      if (extractSelfAssessLevel((data.generated||{})[`tc-${s.id}-${cr.num}`]?.content) !== null) withLevel++;
     }));
     return total > 0 && (withLevel / total) >= 0.8;
   }
   if (stepId === 5) {
     const list = buildSectionsList().filter(s => s.kind !== 'computed');
-    const done = list.filter(s => data.generated[s.id]?.status === 'done').length;
+    const done = list.filter(s => (data.generated||{})[s.id]?.status === 'done').length;
     return done === list.length;
   }
   return false;  // step 6, 7 cần user tick thủ công
@@ -2329,7 +2329,7 @@ function DashboardWorkspace({ data, setData, standards, sections, aiSections, se
 
   // Thống kê tiêu chí theo tiêu chuẩn (parse "Đạt Mức X" từ nội dung đã sinh)
   const stdStats = standards.map(std => {
-    const levels = std.criteria.map(cr => extractSelfAssessLevel(data.generated[`tc-${std.id}-${cr.num}`]?.content));
+    const levels = std.criteria.map(cr => extractSelfAssessLevel((data.generated||{})[`tc-${std.id}-${cr.num}`]?.content));
     const validLevels = levels.filter(l => l !== null && l >= 1);
     const done = levels.filter(l => l !== null).length;
     const total = std.criteria.length;
@@ -2339,7 +2339,7 @@ function DashboardWorkspace({ data, setData, standards, sections, aiSections, se
     return { id: std.id, name: std.name, done, total, validLevels, notReached, minLevel, levels };
   });
 
-  const totalDone = aiSections.filter(s => data.generated[s.id]?.status === 'done').length;
+  const totalDone = aiSections.filter(s => (data.generated||{})[s.id]?.status === 'done').length;
   const totalAll = aiSections.length;
   const pct = Math.round((totalDone / totalAll) * 100);
   const evidenceCount = (data.evidence || []).length + (data.sources?.evidenceList || '').split('\n').filter(l => /\[H\d-\d+\.\d+-\d+\]/.test(l)).length;
@@ -2575,7 +2575,7 @@ function DashboardWorkspace({ data, setData, standards, sections, aiSections, se
               // Đếm phân bố tất cả 24 tiêu chí theo Mức
               const dist = { 0:0, 1:0, 2:0, 3:0, 4:0, unknown:0 };
               standards.forEach(std => std.criteria.forEach(cr => {
-                const lvl = extractSelfAssessLevel(data.generated[`tc-${std.id}-${cr.num}`]?.content);
+                const lvl = extractSelfAssessLevel((data.generated||{})[`tc-${std.id}-${cr.num}`]?.content);
                 if (lvl === null) dist.unknown++;
                 else dist[lvl]++;
               }));
@@ -2613,7 +2613,7 @@ function DashboardWorkspace({ data, setData, standards, sections, aiSections, se
               // Liệt kê tiêu chí có Mức thấp nhất (< targetLevel) hoặc Không đạt hoặc Chưa đánh giá
               const attention = [];
               standards.forEach(std => std.criteria.forEach(cr => {
-                const lvl = extractSelfAssessLevel(data.generated[`tc-${std.id}-${cr.num}`]?.content);
+                const lvl = extractSelfAssessLevel((data.generated||{})[`tc-${std.id}-${cr.num}`]?.content);
                 if (lvl === 0) attention.push({ std: std.id, num: cr.num, name: cr.name, lvl, kind: 'notreached' });
                 else if (lvl !== null && lvl < targetLevel) attention.push({ std: std.id, num: cr.num, name: cr.name, lvl, kind: 'low' });
               }));
