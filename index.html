@@ -2,9 +2,13 @@
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TĐG-TH · Viết Báo cáo Tự đánh giá Trường Tiểu học</title>
-<meta name="description" content="Ứng dụng AI viết Báo cáo Tự đánh giá (KĐCLGD) cho Trường Tiểu học theo TT 17/2018 + TT 22/2024 BGDĐT + CV 5932">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+<meta name="theme-color" content="#0c5da5">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>Hệ thống KĐCLGD Tiểu học · Kiểm định chất lượng giáo dục</title>
+<meta name="description" content="Hệ thống Kiểm định Chất lượng Giáo dục cho Trường Tiểu học: quy trình 7 bước CV 5932, quản lý minh chứng, kế hoạch TĐG, AI viết báo cáo theo TT 17/2018 + TT 22/2024.">
 <script src="https://cdn.tailwindcss.com"></script>
 <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
 <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -45,9 +49,15 @@
   @keyframes fi{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
 
   .app{height:100vh;display:grid;grid-template-rows:56px 1fr;overflow:hidden}
-  .main{display:grid;grid-template-columns:280px 1fr;height:calc(100vh - 56px);overflow:hidden}
+  .main{display:grid;grid-template-columns:280px 1fr;height:calc(100vh - 56px);overflow:hidden;position:relative}
   @media(max-width:1024px){.main{grid-template-columns:240px 1fr}}
-  @media(max-width:768px){.main{grid-template-columns:0 1fr}.outline{display:none}}
+  /* Mobile: sidebar ẩn mặc định, mở drawer bằng hamburger */
+  @media(max-width:768px){
+    .main{grid-template-columns:1fr}
+    .outline{position:fixed;top:56px;left:0;bottom:0;width:280px;z-index:18;transform:translateX(-100%);transition:transform .25s ease;box-shadow:0 10px 30px rgba(0,0,0,.2)}
+    .outline.open{transform:translateX(0)}
+    .mobile-backdrop{position:fixed;top:56px;left:0;right:0;bottom:0;background:rgba(15,23,42,.45);z-index:17;backdrop-filter:blur(2px);animation:fi .2s ease}
+  }
 
   /* TOP BAR — dải xanh liền mạch với sidebar trái */
   .topbar{background:var(--sb-bg);border-bottom:1px solid var(--sb-line);display:flex;align-items:center;gap:14px;padding:0 16px;height:56px;position:relative;z-index:20;color:var(--sb-ink)}
@@ -63,6 +73,13 @@
   .topbar .btn-soft:hover{background:#f1f5f9;color:var(--brand-600);border-color:#f1f5f9}
   .topbar .btn-ghost{background:transparent;border-color:transparent;color:rgba(255,255,255,0.85)}
   .topbar .btn-ghost:hover{background:rgba(255,255,255,0.12);border-color:transparent;color:#fff}
+
+  /* Workspace tabs — chuyển vùng làm việc (Tổng quan / Báo cáo / Minh chứng / Kế hoạch) */
+  .ws-tab{display:inline-flex;align-items:center;gap:6px;padding:7px 12px;font-size:12.5px;font-weight:500;color:rgba(255,255,255,0.72);background:transparent;border:0;border-radius:7px;cursor:pointer;transition:all .12s;position:relative;white-space:nowrap}
+  .ws-tab:hover{background:rgba(255,255,255,0.1);color:#fff}
+  .ws-tab.active{background:rgba(255,255,255,0.18);color:#fff;font-weight:600;box-shadow:inset 0 -2px 0 #fff}
+  .ws-tab .ws-badge{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:17px;padding:0 5px;background:rgba(255,255,255,0.25);color:#fff;font-size:10.5px;font-weight:600;border-radius:999px;margin-left:2px}
+  .ws-tab.active .ws-badge{background:#fff;color:var(--brand-600)}
 
   .outline{background:var(--sb-bg);border-right:1px solid var(--sb-line);overflow-y:auto;overflow-x:hidden;color:var(--sb-ink)}
   .outline::-webkit-scrollbar,.doc-scroll::-webkit-scrollbar{width:8px}
@@ -185,6 +202,286 @@
   .toast{position:fixed;bottom:20px;right:20px;z-index:40;padding:10px 16px;background:var(--ink);color:#fff;border-radius:8px;font-size:13px;box-shadow:0 8px 24px rgba(0,0,0,.2);animation:tf .3s ease}
   @keyframes tf{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 
+  /* ============================================================
+     WORKSPACE CONTAINER — dùng chung cho Tổng quan / Minh chứng / Kế hoạch
+  ============================================================ */
+  .ws-main{overflow-y:auto;background:var(--bg);height:calc(100vh - 56px)}
+  .ws-wrap{max-width:1240px;margin:0 auto;padding:24px 28px 80px}
+  .ws-title{font-family:'Inter',sans-serif;font-size:22px;font-weight:700;color:var(--ink);letter-spacing:-0.01em;margin:0 0 4px}
+  .ws-subtitle{font-size:13px;color:var(--ink-muted);margin:0 0 20px}
+  .ws-card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:20px;box-shadow:0 1px 2px rgba(15,23,42,.04)}
+  .ws-card-h{font-size:14px;font-weight:600;color:var(--ink);margin:0 0 14px;display:flex;align-items:center;gap:8px}
+  .ws-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:900px){.ws-grid{grid-template-columns:1fr}}
+  .ws-stat{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+  .ws-stat-label{font-size:11.5px;font-weight:600;color:var(--faint);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px}
+  .ws-stat-value{font-size:26px;font-weight:700;color:var(--ink);line-height:1.1;font-family:'Inter',sans-serif}
+  .ws-stat-sub{font-size:12px;color:var(--ink-muted);margin-top:4px}
+
+  /* Workflow 7 bước — khối màu rõ nét phân biệt trạng thái */
+  .wf-step{display:grid;grid-template-columns:auto 1fr auto;gap:14px;padding:14px 16px;border:2px solid transparent;border-radius:12px;align-items:center;transition:all .18s;position:relative;overflow:hidden}
+  .wf-step::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--line)}
+  /* Pending — xám nhẹ */
+  .wf-step.pending{background:#f8fafc;border-color:#e2e8f0}
+  .wf-step.pending::before{background:#cbd5e1}
+  .wf-step.pending:hover{background:#fff;border-color:var(--brand-100);box-shadow:0 2px 8px rgba(12,93,165,.06)}
+  /* Auto-done — xanh lá nhạt + dashed */
+  .wf-step.auto-done{background:linear-gradient(135deg,#f0fdf4,#ecfdf5);border-color:#86efac;border-style:dashed}
+  .wf-step.auto-done::before{background:#22c55e}
+  /* Done — xanh lá đậm solid */
+  .wf-step.done{background:linear-gradient(135deg,#dcfce7,#f0fdf4);border-color:#22c55e}
+  .wf-step.done::before{background:#15803d}
+  /* Current — xanh dương đậm với pulse */
+  .wf-step.current{background:linear-gradient(135deg,var(--brand-50),#fff);border-color:var(--brand);box-shadow:0 4px 14px rgba(12,93,165,.14)}
+  .wf-step.current::before{background:var(--brand)}
+  .wf-num{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;flex-shrink:0;background:#fff;color:var(--ink-muted);border:2px solid var(--line);transition:all .2s}
+  .wf-step.pending .wf-num{background:#fff;color:#94a3b8;border-color:#cbd5e1}
+  .wf-step.auto-done .wf-num{background:#dcfce7;color:#15803d;border-color:#86efac}
+  .wf-step.done .wf-num{background:#15803d;color:#fff;border-color:#15803d;box-shadow:0 2px 6px rgba(21,128,61,.3)}
+  .wf-step.current .wf-num{background:var(--brand);color:#fff;border-color:var(--brand);box-shadow:0 2px 8px rgba(12,93,165,.3);animation:wfpulse 1.8s ease-in-out infinite}
+  @keyframes wfpulse{0%,100%{box-shadow:0 0 0 0 rgba(12,93,165,.45),0 2px 8px rgba(12,93,165,.3)}50%{box-shadow:0 0 0 8px rgba(12,93,165,0),0 2px 8px rgba(12,93,165,.3)}}
+  .wf-body{min-width:0}
+  .wf-name{font-size:14px;font-weight:600;color:var(--ink);margin-bottom:3px;display:flex;align-items:center;gap:6px}
+  .wf-badge{display:inline-flex;align-items:center;gap:3px;padding:1px 7px;border-radius:999px;font-size:10px;font-weight:600;letter-spacing:0.02em;text-transform:uppercase}
+  .wf-badge.done{background:#15803d;color:#fff}
+  .wf-badge.auto{background:#86efac;color:#14532d}
+  .wf-badge.current{background:var(--brand);color:#fff}
+  .wf-desc{font-size:12.5px;color:var(--ink-muted);line-height:1.55}
+  .wf-meta{display:flex;gap:10px;margin-top:6px;flex-wrap:wrap;font-size:11.5px;color:var(--faint)}
+  .wf-meta span{display:inline-flex;align-items:center;gap:3px}
+  .wf-actions{display:flex;flex-direction:column;gap:5px;align-items:flex-end;flex-shrink:0;min-width:130px}
+  /* Toggle chi tiết rõ ràng hơn (không còn quá mờ) */
+  .wf-detail-btn{background:rgba(12,93,165,0.08);color:var(--brand-600);border:1px solid var(--brand-100);padding:3px 9px;border-radius:5px;font-size:11px;font-weight:500;cursor:pointer;display:inline-flex;align-items:center;gap:3px;transition:all .12s}
+  .wf-detail-btn:hover{background:rgba(12,93,165,0.15);border-color:var(--brand)}
+  .wf-detail-box{display:none;margin-top:8px;padding:10px;background:#fff;border:1px dashed var(--brand-100);border-radius:7px;gap:6px;flex-direction:column}
+  .wf-detail-box.open{display:flex}
+  .wf-detail-box input,.wf-detail-box textarea{padding:6px 9px;border:1px solid var(--line);border-radius:5px;font-size:12px;font-family:inherit;outline:none}
+  .wf-detail-box input:focus,.wf-detail-box textarea:focus{border-color:var(--brand);box-shadow:0 0 0 2px var(--brand-100)}
+  .wf-detail-label{font-size:10.5px;font-weight:600;color:var(--faint);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:-3px}
+
+  /* Dashed divider có label ở giữa — dùng trong card Mức độ đạt được */
+  .sep-dashed{position:relative;height:18px;margin:18px 0 14px;display:flex;align-items:center;justify-content:center}
+  .sep-dashed::before{content:'';position:absolute;left:0;right:0;top:50%;border-top:2px dashed var(--brand-100)}
+  .sep-dashed span{position:relative;background:var(--panel);padding:0 12px;font-size:10.5px;font-weight:700;color:var(--brand-600);text-transform:uppercase;letter-spacing:0.08em}
+
+  /* Bar ngang cho phân bố tiêu chí theo Mức */
+  .dist-row{display:grid;grid-template-columns:90px 1fr 46px;gap:10px;align-items:center;margin-bottom:6px}
+  .dist-label{font-size:12px;color:var(--ink)}
+  .dist-bar{height:18px;background:#f1f5f9;border-radius:4px;overflow:hidden;position:relative}
+  .dist-fill{height:100%;transition:width .4s;display:flex;align-items:center;justify-content:flex-end;padding-right:6px;color:#fff;font-size:11px;font-weight:600}
+  .dist-count{text-align:right;font-size:12px;font-weight:600;color:var(--ink-muted)}
+
+  /* ============================================================
+     HELP MODAL — Hướng dẫn chi tiết cả hệ thống
+  ============================================================ */
+  .modal-xxl{max-width:1100px;height:90vh}
+  .help-body{display:grid;grid-template-columns:260px 1fr;height:calc(90vh - 70px);overflow:hidden}
+  @media(max-width:900px){.help-body{grid-template-columns:200px 1fr}}
+  .help-nav{background:#f8fafc;border-right:1px solid var(--line);overflow-y:auto;padding:10px 6px}
+  .help-nav-item{display:flex;align-items:center;gap:9px;padding:9px 12px;font-size:13px;color:var(--ink-muted);cursor:pointer;border-radius:7px;margin-bottom:2px;transition:all .12s;user-select:none}
+  .help-nav-item:hover{background:#e2e8f0;color:var(--ink)}
+  .help-nav-item.active{background:var(--brand);color:#fff;font-weight:600;box-shadow:0 2px 6px rgba(12,93,165,.2)}
+  .help-nav-item.active .hi-num{background:#fff;color:var(--brand-600)}
+  .hi-num{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:rgba(12,93,165,.12);color:var(--brand-600);font-size:11.5px;font-weight:700;flex-shrink:0}
+  .help-nav-section{padding:12px 12px 4px;font-size:10.5px;font-weight:700;color:var(--faint);text-transform:uppercase;letter-spacing:0.08em;margin-top:6px}
+  .help-content{padding:28px 36px 60px;overflow-y:auto;font-family:'Inter','Be Vietnam Pro',system-ui,sans-serif}
+  @media(max-width:900px){.help-content{padding:20px 22px 60px}}
+  .help-content h2{font-size:22px;font-weight:700;color:var(--ink);margin:0 0 6px;font-family:'Fraunces',serif;letter-spacing:-0.01em}
+  .help-content .help-sub{font-size:13px;color:var(--ink-muted);margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--line-soft)}
+  .help-content h3{font-size:15.5px;font-weight:700;color:var(--ink);margin:24px 0 8px;display:flex;align-items:center;gap:8px}
+  .help-content h4{font-size:13.5px;font-weight:600;color:var(--brand-600);margin:16px 0 6px}
+  .help-content p{line-height:1.7;color:var(--ink);font-size:13.5px;margin:0 0 10px}
+  .help-content ul,.help-content ol{margin:0 0 12px 22px;line-height:1.7;font-size:13.5px;color:var(--ink);padding:0}
+  .help-content ul li,.help-content ol li{margin-bottom:5px}
+  .help-content b{color:var(--ink);font-weight:600}
+  .help-content code{background:#f1f5f9;padding:2px 6px;border-radius:4px;font-size:12px;color:var(--brand-600);font-family:ui-monospace,'Consolas',monospace}
+
+  /* Mockup fake-screenshot */
+  .help-mockup{border:1.5px solid var(--line);border-radius:10px;padding:16px 18px 14px;margin:14px 0;background:#fff;position:relative;font-size:12.5px;box-shadow:0 4px 14px -6px rgba(15,23,42,.08)}
+  .help-mockup-label{position:absolute;top:-10px;left:16px;background:var(--panel);padding:2px 9px;font-size:9.5px;font-weight:700;color:var(--faint);letter-spacing:0.08em;text-transform:uppercase;border:1px solid var(--line);border-radius:3px}
+  .mock-topbar{background:linear-gradient(90deg,#0c5da5,#074388);color:#fff;padding:9px 14px;border-radius:7px;font-size:12px;font-weight:500;display:flex;align-items:center;gap:10px;margin-bottom:8px}
+  .mock-tab{padding:4px 10px;border-radius:5px;background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.7);font-size:11.5px}
+  .mock-tab.active{background:rgba(255,255,255,0.25);color:#fff;font-weight:600;box-shadow:inset 0 -2px 0 #fff}
+  .mock-pill{padding:3px 10px;border-radius:999px;background:rgba(255,255,255,0.15);font-size:11px}
+  .mock-btn{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:var(--brand);color:#fff;border-radius:5px;font-size:11.5px;font-weight:500}
+  .mock-btn.soft{background:var(--brand-50);color:var(--brand-600)}
+  .mock-btn.white{background:#fff;color:var(--brand-600);border:1px solid var(--line)}
+  .mock-row{display:flex;align-items:center;gap:6px;padding:6px 0;font-size:12px;border-top:1px dashed var(--line-soft)}
+  .mock-row:first-child{border-top:0}
+  .mock-input{display:inline-block;padding:3px 10px;border:1px solid var(--line);border-radius:4px;font-size:11.5px;background:#fff;color:var(--ink-muted);min-width:120px}
+  .mock-sidebar{display:inline-block;padding:4px 10px;background:#0c5da5;color:rgba(255,255,255,0.85);border-radius:4px;font-size:11.5px;margin:2px 0}
+  .mock-sidebar.active{background:rgba(255,255,255,0.25);color:#fff;box-shadow:inset 2px 0 0 #fff}
+
+  /* Flow steps */
+  .help-flow{display:flex;align-items:center;gap:4px;padding:14px 16px;background:linear-gradient(135deg,var(--brand-50),#f0f9ff);border-radius:10px;margin:14px 0;overflow-x:auto;border:1px solid var(--brand-100)}
+  .help-flow-box{flex-shrink:0;background:#fff;border:1px solid var(--brand);border-radius:7px;padding:7px 10px;text-align:center;min-width:90px;font-size:11px;line-height:1.3;box-shadow:0 1px 3px rgba(12,93,165,.1)}
+  .help-flow-box b{display:block;color:var(--brand-600);font-size:12px;margin-bottom:2px}
+  .help-flow-arrow{color:var(--brand);font-size:16px;font-weight:700}
+
+  /* Callouts */
+  .help-note{padding:12px 14px;border-radius:8px;margin:12px 0;font-size:13px;line-height:1.6}
+  .help-note.info{background:#f0f9ff;border:1px solid #bae6fd;color:#0c4a6e}
+  .help-note.warn{background:#fffbeb;border:1px solid #fde68a;color:#92400e}
+  .help-note.success{background:#f0fdf4;border:1px solid #86efac;color:#166534}
+  .help-note.danger{background:#fef2f2;border:1px solid #fecaca;color:#991b1b}
+  .help-note b{font-weight:700}
+
+  /* Q&A */
+  .help-qa{border-left:3px solid var(--brand);padding:2px 0 2px 14px;margin:12px 0}
+  .help-qa-q{font-weight:600;color:var(--ink);font-size:13.5px;margin-bottom:4px}
+  .help-qa-a{font-size:13px;color:var(--ink-muted);line-height:1.6}
+  .help-qa-a b{color:var(--ink)}
+
+  /* Kbd */
+  kbd{display:inline-block;padding:2px 7px;background:#fff;border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;font-family:ui-monospace,monospace;font-size:11px;color:var(--ink)}
+
+  /* Doc cards — thẻ văn bản pháp lý */
+  .help-doc-card{padding:12px 14px;border:1px solid var(--line);border-radius:8px;margin:8px 0;background:#fff}
+  .help-doc-title{font-size:13.5px;font-weight:700;color:var(--brand-600);margin-bottom:3px}
+  .help-doc-desc{font-size:12.5px;color:var(--ink-muted);line-height:1.55}
+
+  /* ============================================================
+     📱 MOBILE RESPONSIVE — tối ưu cho điện thoại & tablet
+     Breakpoints:
+       ≤1280px: màn hình nhỏ laptop — shrink một chút
+       ≤1024px: tablet ngang — ẩn subtitle brand, tabs icon-only
+       ≤768px:  tablet dọc / mobile lớn — hamburger, single col, modal full
+       ≤480px:  mobile — grid 1 col, tables scroll, stats 2×2
+  ============================================================ */
+
+  /* Hamburger & mobile buttons — ẩn trên desktop */
+  .hamburger-btn{display:none;width:36px;height:36px;align-items:center;justify-content:center;background:rgba(255,255,255,0.12);color:#fff;border:1px solid rgba(255,255,255,0.2);border-radius:7px;cursor:pointer;flex-shrink:0}
+  .hamburger-btn:hover{background:rgba(255,255,255,0.22)}
+  .tb-more{display:none;position:relative}
+  .tb-more-menu{position:absolute;top:calc(100% + 6px);right:0;min-width:190px;background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:4px;box-shadow:0 10px 30px rgba(0,0,0,.15);z-index:25;animation:fi .16s ease}
+  .tb-more-menu button{display:flex;align-items:center;gap:8px;width:100%;padding:8px 12px;background:transparent;border:0;border-radius:6px;color:var(--ink);font-size:13px;font-weight:500;cursor:pointer;text-align:left}
+  .tb-more-menu button:hover{background:#f1f5f9}
+
+  /* ≤1280px — compact brand */
+  @media(max-width:1280px){
+    .brand-sub{display:none}
+    .ws-tab span:not(.ws-badge){font-size:12px}
+  }
+
+  /* ≤1024px — tabs chỉ icon, sh-pill thu nhỏ */
+  @media(max-width:1024px){
+    .ws-tab span:not(.ws-badge){display:none}
+    .ws-tab{padding:7px 10px}
+    .topbar .sch-pill span:last-of-type{display:none}
+    .topbar .sch-pill span:first-of-type{max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .save-status{display:none}
+  }
+
+  /* ≤768px — MOBILE: hamburger + overflow menu */
+  @media(max-width:768px){
+    .hamburger-btn{display:inline-flex}
+    .tb-more{display:inline-block}
+    .topbar{padding:0 10px;gap:8px}
+    .brand-logo{width:30px;height:30px;font-size:16px}
+    .brand-title{font-size:12.5px !important}
+    .topbar .sch-pill{display:none}
+    .tb-hide-sm{display:none !important}  /* class để ẩn nút trên mobile */
+    .doc-wrap{padding:12px 10px 80px}
+    .doc-page{padding:20px 18px;border-radius:8px}
+    .ws-wrap{padding:16px 12px 60px}
+    .ws-title{font-size:18px}
+    .ws-card{padding:14px 12px;border-radius:10px}
+    .ws-grid{gap:12px}
+    /* Dashboard stats 4 → 2 col */
+    .ws-wrap > div[style*="grid-template-columns:repeat(4,1fr)"]{grid-template-columns:1fr 1fr !important;gap:8px !important}
+    /* Modal full screen */
+    .overlay{padding:0}
+    .modal,.modal-lg,.modal-xxl{max-width:100%;width:100%;height:100vh;max-height:100vh;border-radius:0}
+    .modal-h{padding:14px 16px}
+    .modal-b{padding:16px}
+    .modal-f{padding:12px 16px}
+    /* Form grid → 1 col */
+    .grid2,.grid3{grid-template-columns:1fr !important;gap:10px !important}
+    /* Help modal */
+    .help-body{grid-template-columns:1fr !important;height:calc(100vh - 60px) !important}
+    .help-nav{max-height:180px;border-right:0;border-bottom:1px solid var(--line)}
+    .help-content{padding:20px 16px 60px}
+    .help-content h2{font-size:19px}
+    .help-content h3{font-size:14.5px}
+    .help-content p,.help-content ul,.help-content ol{font-size:13.5px}
+    /* Bar chart full */
+    .dist-row{grid-template-columns:72px 1fr 40px;gap:6px}
+    .dist-label{font-size:11.5px}
+    /* Workflow 7 bước mobile — stack actions xuống dưới */
+    .wf-step{grid-template-columns:40px 1fr;padding:12px 12px}
+    .wf-actions{grid-column:1 / -1;flex-direction:row;justify-content:flex-end;min-width:0;margin-top:4px}
+    /* Plan timeline simplify */
+    .plan-tl-row{grid-template-columns:30px 1fr;gap:6px}
+    .plan-tl-row > input,.plan-tl-row > select,.plan-tl-row > div:nth-child(n+3){grid-column:2}
+    .plan-tl-row:first-of-type{display:none}  /* ẩn header row */
+    /* Evidence table scroll */
+    .ev-table{font-size:12px;display:block;overflow-x:auto;white-space:nowrap}
+    /* School cover preview */
+    .doc-body{font-size:13pt;line-height:1.55}
+    /* Toast */
+    .toast{left:12px;right:12px;bottom:12px}
+    /* Touch target — tăng min-height cho mọi nút */
+    .btn{min-height:36px}
+    .btn-xs{min-height:32px;padding:6px 10px}
+    .btn-icon{width:36px;height:36px}
+    /* Workspace tabs nhỏ hơn */
+    .ws-tab{padding:7px 9px;min-height:34px}
+  }
+
+  /* ≤480px — SMALL MOBILE */
+  @media(max-width:480px){
+    .brand-logo{width:28px;height:28px;font-size:15px}
+    .topbar{gap:6px}
+    .topbar > div:nth-child(2){display:none}  /* ẩn hoàn toàn brand text trên mobile nhỏ */
+    .ws-tab{padding:6px 8px}
+    /* Dashboard stats 2 → 1 col */
+    .ws-wrap > div[style*="grid-template-columns:repeat(4,1fr)"]{grid-template-columns:1fr !important}
+    /* Ma trận 5 TC × 4 Mức — chuyển sang scroll */
+    .help-content table,.ws-card table{display:block;overflow-x:auto;white-space:nowrap}
+    .doc-page{padding:16px 14px}
+    .ws-wrap{padding:12px 8px 60px}
+    .ws-card{padding:12px 10px}
+    /* Help mockup nhỏ gọn */
+    .help-mockup{padding:12px 10px}
+    .mock-topbar{flex-wrap:wrap;gap:6px;padding:8px 10px}
+    .mock-tab{font-size:10.5px;padding:3px 7px}
+    .mock-input{min-width:80px;font-size:10.5px}
+    .help-flow{padding:10px 10px;gap:2px}
+    .help-flow-box{min-width:74px;padding:6px 7px;font-size:10px}
+    .help-flow-box b{font-size:11px}
+  }
+
+  /* Print — tắt mobile-only */
+  @media print{
+    .hamburger-btn,.tb-more,.mobile-backdrop{display:none !important}
+  }
+
+  /* Evidence table */
+  .ev-toolbar{display:flex;gap:8px;align-items:center;margin-bottom:14px;flex-wrap:wrap}
+  .ev-toolbar input[type="text"],.ev-toolbar select{padding:7px 10px;border:1px solid var(--line);border-radius:6px;font-size:13px;background:#fff;outline:none;font-family:inherit}
+  .ev-toolbar input:focus,.ev-toolbar select:focus{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-100)}
+  .ev-table{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--line);border-radius:8px;overflow:hidden;font-size:13px}
+  .ev-table th{background:#f8fafc;padding:10px 12px;text-align:left;font-weight:600;font-size:11.5px;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.04em;border-bottom:1px solid var(--line)}
+  .ev-table td{padding:10px 12px;border-top:1px solid var(--line-soft);vertical-align:top}
+  .ev-table tr:hover td{background:#f8fafc}
+  .ev-code{font-family:ui-monospace,'Consolas',monospace;font-size:11.5px;color:var(--brand-600);font-weight:600;white-space:nowrap}
+  .ev-status{display:inline-flex;padding:2px 8px;border-radius:999px;font-size:10.5px;font-weight:600;letter-spacing:0.02em}
+  .ev-status.pending{background:#fef3c7;color:#b45309}
+  .ev-status.collected{background:#dbeafe;color:#1e40af}
+  .ev-status.verified{background:#dcfce7;color:#15803d}
+  .ev-empty{text-align:center;padding:60px 20px;color:var(--faint)}
+
+  /* Plan form */
+  .plan-section{margin-bottom:24px}
+  .plan-field textarea{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:7px;font-family:inherit;font-size:13.5px;background:#fff;outline:none;resize:vertical;min-height:80px;line-height:1.55}
+  .plan-field textarea:focus{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-100)}
+  .plan-field input[type="text"],.plan-field input[type="date"]{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:6px;font-size:13.5px;background:#fff;outline:none;font-family:inherit}
+  .plan-field label{display:block;font-size:12.5px;font-weight:600;color:var(--ink);margin-bottom:5px}
+  .plan-tl-row{display:grid;grid-template-columns:40px 2.4fr 1fr 1fr 1fr;gap:8px;padding:10px 8px;border-top:1px solid var(--line-soft);align-items:start}
+  .plan-tl-row:first-of-type{border-top:0;background:#f8fafc;font-weight:600;font-size:11.5px;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.04em;padding:8px}
+  .plan-tl-row input,.plan-tl-row select{padding:5px 8px;border:1px solid var(--line);border-radius:5px;font-size:12.5px;background:#fff;outline:none;font-family:inherit}
+  .plan-tl-row select:focus,.plan-tl-row input:focus{border-color:var(--brand)}
+
   @media print{
     body{overflow:auto;background:#fff}
     .app{display:block;height:auto}
@@ -235,6 +532,11 @@ const IInfo = Ic(['M12 16v-4','M12 8h.01'], <circle cx="12" cy="12" r="10"/>);
 const IEye = Ic(['M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z'], <circle cx="12" cy="12" r="3"/>);
 const ILink = Ic(['M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71','M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71']);
 const IDoc = Ic(['M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z','M14 2v6h6','M16 13H8','M16 17H8','M10 9H8']);
+const IHome = Ic(['m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z','M9 22V12h6v10']);
+const ICal = Ic(['M8 2v4','M16 2v4','M3 10h18'], <rect x="3" y="4" width="18" height="18" rx="2"/>);
+const IClip = Ic(['M8 2h8v4H8z','M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2','m9 14 2 2 4-4']);
+const ITable = Ic(['M3 3h18v18H3zM3 9h18M3 15h18M9 3v18M15 3v18']);
+const IFlag = Ic(['M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z','M4 22v-7']);
 
 /* ============================================================
    DATA · BỘ TIÊU CHUẨN & TIÊU CHÍ TIỂU HỌC
@@ -607,6 +909,18 @@ const DEFAULT_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxXuiJd
 const loadLS = (k, fb = null) => { try { return JSON.parse(localStorage.getItem(k)) ?? fb; } catch { return fb; } };
 const saveLS = (k, v) => localStorage.setItem(k, JSON.stringify(v));
 
+/* QUY TRÌNH 7 BƯỚC TỰ ĐÁNH GIÁ theo CV 5932/BGDĐT-QLCL (28/12/2018).
+   Dashboard hiển thị timeline 7 bước, user check khi hoàn thành từng bước. */
+const CV5932_STEPS = [
+  { id: 1, name: 'Thành lập hội đồng tự đánh giá',           desc: 'Hiệu trưởng ra quyết định thành lập Hội đồng TĐG gồm 7-15 thành viên (CT, Phó CT, Thư ký, các Ủy viên). Phân công nhiệm vụ từng thành viên.' },
+  { id: 2, name: 'Lập kế hoạch tự đánh giá',                 desc: 'Xác định mục đích, phạm vi, thời gian thực hiện, phân công trách nhiệm, dự trù kinh phí, nguồn lực. Ban hành văn bản kế hoạch TĐG.' },
+  { id: 3, name: 'Thu thập, xử lý và phân tích các minh chứng', desc: 'Rà soát toàn bộ hồ sơ nhà trường; xác định mã minh chứng [Hx-x.x-yy]; xử lý và phân tích để chuẩn bị đánh giá.' },
+  { id: 4, name: 'Đánh giá các mức đạt được theo từng tiêu chí', desc: 'Đối chiếu chỉ báo Mức 1/2/3/4 với thực tế nhà trường; phân công từng thành viên HĐ đánh giá từng tiêu chí.' },
+  { id: 5, name: 'Viết báo cáo tự đánh giá',                 desc: 'Soạn báo cáo theo cấu trúc: Phần I (Cơ sở dữ liệu), Phần II (Tự đánh giá A/B), Phần III (Kết luận chung), Phần IV (Phụ lục).' },
+  { id: 6, name: 'Công bố báo cáo tự đánh giá',              desc: 'Niêm yết báo cáo tại trường; đăng trên website; gửi cơ quan quản lý giáo dục cấp trên (UBND xã/Sở GD&ĐT).' },
+  { id: 7, name: 'Triển khai các hoạt động sau tự đánh giá', desc: 'Thực hiện kế hoạch cải tiến chất lượng đã đề ra trong báo cáo; đăng ký đánh giá ngoài; duy trì và nâng cao chất lượng.' }
+];
+
 /* Mẫu Hội đồng TĐG chuẩn theo Công văn 5932/BGDĐT-QLCL + thực tế trường TH
    User có thể thêm/bớt thành viên trong SchoolInfoModal. */
 const DEFAULT_COUNCIL = [
@@ -648,9 +962,44 @@ const emptyReport = () => {
       evidenceList: DEFAULT_EVIDENCE_HINTS,
       driveLinks: []
     },
-    generated: {},
+    /* QUY TRÌNH 7 BƯỚC TỰ ĐÁNH GIÁ (CV 5932) — trạng thái từng bước */
+    workflow: CV5932_STEPS.map(s => ({
+      id: s.id, done: false, progress: 0,
+      startDate: '', deadline: '', completedAt: '', assignee: '', note: ''
+    })),
+    /* MINH CHỨNG cấu trúc đầy đủ cho CRUD table — khác với sources.evidenceList (text).
+       Khi có dữ liệu ở đây, app tự đồng bộ sang evidenceList để AI dùng.
+       Format: { id, code, title, standardId, criterionNum, source, collectedBy, collectedAt, fileUrl, status, note } */
+    evidence: [],
+    /* KẾ HOẠCH TỰ ĐÁNH GIÁ (Bước 2 của CV 5932) — xuất thành văn bản riêng */
+    plan: {
+      purpose: 'Đánh giá toàn diện chất lượng các hoạt động giáo dục của nhà trường theo các tiêu chuẩn KĐCLGD; xác định mức độ đạt được của trường; lập kế hoạch cải tiến chất lượng; đăng ký công nhận trường đạt chuẩn quốc gia.',
+      scope: 'Toàn bộ hoạt động của nhà trường trong 05 năm học liền kề năm đánh giá; đánh giá theo 5 tiêu chuẩn · 24 tiêu chí quy định tại Thông tư 17/2018/TT-BGDĐT (sửa đổi bởi Thông tư 22/2024/TT-BGDĐT).',
+      startDate: '',
+      endDate: '',
+      budget: '',
+      resources: 'Ngân sách nhà trường; hỗ trợ từ UBND xã, Sở GD&ĐT; đóng góp của Ban đại diện cha mẹ học sinh.',
+      methodology: 'Nghiên cứu hồ sơ; phỏng vấn cán bộ quản lý, giáo viên, nhân viên, học sinh, cha mẹ học sinh; quan sát thực tế; phiếu đánh giá tiêu chí.',
+      notes: ''
+    },
     reportId: '',
     savedAt: null
+  };
+};
+
+/* Migration: khi load từ localStorage cũ có thể thiếu workflow/evidence/plan.
+   Đảm bảo mọi field đều có giá trị hợp lệ trước khi setData. */
+const migrateReport = (data) => {
+  if (!data) return emptyReport();
+  const def = emptyReport();
+  return {
+    ...def,
+    ...data,
+    schoolInfo: { ...def.schoolInfo, ...(data.schoolInfo || {}) },
+    sources: { ...def.sources, ...(data.sources || {}) },
+    workflow: Array.isArray(data.workflow) && data.workflow.length === 7 ? data.workflow : def.workflow,
+    evidence: Array.isArray(data.evidence) ? data.evidence : def.evidence,
+    plan: { ...def.plan, ...(data.plan || {}) }
   };
 };
 
@@ -1007,6 +1356,13 @@ const buildSectionsList = () => {
 /* ============================================================
    EXPORT .DOC (theo NĐ 30/2020 + MSO)
 ============================================================ */
+/* Helper: Uppercase tiếng Việt chuẩn Unicode.
+   MS Word BUG với CSS `text-transform:uppercase` và ký tự Việt có dấu
+   (ụ, ọ, ế, ặ…) — Word không chuyển hoa đúng ra "DụC", "HọC".
+   Giải pháp: pre-uppercase trong JS bằng toLocaleUpperCase('vi-VN').
+   CSS text-transform vẫn giữ trên SCREEN (preview) vì browser xử lý đúng. */
+const U = (s) => String(s || '').toLocaleUpperCase('vi-VN');
+
 const mdToHtml = (md) => {
   if (!md) return '<p class="placeholder">[CHƯA TẠO NỘI DUNG]</p>';
   let t = md;
@@ -1077,9 +1433,9 @@ const buildFullDocHtml = (data) => {
 }
 div.WordSection1 { page: WordSection1; }
 body { font-family: 'Times New Roman', serif; font-size: 14pt; line-height: 1.5; color: #000; margin: 0; }
-h1 { text-align: center; font-size: 16pt; font-weight: bold; margin: 14pt 0; text-transform: uppercase; mso-pagination: lines-together; font-family: 'Times New Roman', serif; }
-h2 { text-align: center; font-size: 15pt; font-weight: bold; margin: 12pt 0 6pt; text-transform: uppercase; font-family: 'Times New Roman', serif; }
-h3 { font-size: 14pt; font-weight: bold; margin: 12pt 0 6pt; text-align: left; text-indent: 0; text-transform: uppercase; font-family: 'Times New Roman', serif; }
+h1 { text-align: center; font-size: 16pt; font-weight: bold; margin: 14pt 0; mso-pagination: lines-together; font-family: 'Times New Roman', serif; }
+h2 { text-align: center; font-size: 15pt; font-weight: bold; margin: 12pt 0 6pt; font-family: 'Times New Roman', serif; }
+h3 { font-size: 14pt; font-weight: bold; margin: 12pt 0 6pt; text-align: left; text-indent: 0; font-family: 'Times New Roman', serif; }
 h4 { font-size: 14pt; font-weight: bold; font-style: italic; margin: 8pt 0 4pt; text-align: left; text-indent: 0; font-family: 'Times New Roman', serif; }
 p { text-align: justify; text-indent: 1.27cm; margin: 0; line-height: 1.5; mso-line-height-rule: exactly; font-family: 'Times New Roman', serif; font-size: 14pt; }
 p.center { text-align: center; text-indent: 0; }
@@ -1097,18 +1453,18 @@ th { text-align: center; font-weight: bold; }
 <div class="WordSection1">`;
 
   // Trang bìa — tất cả dùng Times New Roman, các chữ lớn in hoa theo yêu cầu
-  h += `<p class="center no-indent" style="margin-top:18pt;font-size:14pt"><b>UBND ${schoolInfo.ward ? schoolInfo.ward.toUpperCase() : '...'}</b></p>`;
-  h += `<p class="center no-indent" style="font-size:15pt"><b>${(schoolInfo.name || 'TRƯỜNG ...').toUpperCase()}</b></p>`;
+  h += `<p class="center no-indent" style="margin-top:18pt;font-size:14pt"><b>UBND ${schoolInfo.ward ? U(schoolInfo.ward) : '...'}</b></p>`;
+  h += `<p class="center no-indent" style="font-size:15pt"><b>${U(schoolInfo.name || 'TRƯỜNG ...')}</b></p>`;
   h += `<p class="center no-indent" style="margin-top:8pt;font-size:14pt">──────────</p>`;
   h += `<div class="cover-spacer"></div>`;
   h += `<p class="center no-indent" style="font-size:22pt"><b>BÁO CÁO TỰ ĐÁNH GIÁ</b></p>`;
   h += `<p class="center no-indent" style="margin-top:12pt;font-style:italic;font-size:14pt">(Kiểm định chất lượng giáo dục và công nhận đạt chuẩn quốc gia)</p>`;
   h += `<div class="cover-spacer"></div><div class="cover-spacer"></div>`;
-  h += `<p class="center no-indent" style="font-size:14pt"><b>${(schoolInfo.province || '...').toUpperCase()}, NĂM ${schoolInfo.academicYearTo || new Date().getFullYear()}</b></p>`;
+  h += `<p class="center no-indent" style="font-size:14pt"><b>${U(schoolInfo.province || '...')}, NĂM ${schoolInfo.academicYearTo || new Date().getFullYear()}</b></p>`;
   h += `<p class="center no-indent page-break">&nbsp;</p>`;
 
   // Hội đồng TĐG (render từ schoolInfo.council, fallback về mặc định)
-  h += `<h1>Danh sách và chữ ký thành viên Hội đồng tự đánh giá</h1>`;
+  h += `<h1>DANH SÁCH VÀ CHỮ KÝ THÀNH VIÊN HỘI ĐỒNG TỰ ĐÁNH GIÁ</h1>`;
   h += `<table><tr><th style="width:6%">TT</th><th style="width:28%">Họ và tên</th><th style="width:24%">Chức vụ</th><th style="width:26%">Nhiệm vụ trong Hội đồng</th><th style="width:16%">Chữ ký</th></tr>`;
   const council = (schoolInfo.council && schoolInfo.council.length) ? schoolInfo.council : [{ name: schoolInfo.principal || '', position: 'Hiệu trưởng', role: 'Chủ tịch Hội đồng' }];
   council.forEach((m, i) => {
@@ -1119,7 +1475,7 @@ th { text-align: center; font-weight: bold; }
   h += `<p class="center no-indent page-break">&nbsp;</p>`;
 
   // Mục lục
-  h += `<h1>Mục lục</h1>`;
+  h += `<h1>MỤC LỤC</h1>`;
   h += `<p class="no-indent">Danh mục các chữ viết tắt</p>`;
   h += `<p class="no-indent">Bảng tổng hợp kết quả tự đánh giá</p>`;
   h += `<p class="no-indent"><b>Phần I. Cơ sở dữ liệu</b></p>`;
@@ -1135,18 +1491,18 @@ th { text-align: center; font-weight: bold; }
   h += `<p class="center no-indent page-break">&nbsp;</p>`;
 
   // Bảng tổng hợp kết quả tự đánh giá (tính tự động từ nội dung đã sinh)
-  h += `<h1>Bảng tổng hợp kết quả tự đánh giá</h1>`;
+  h += `<h1>BẢNG TỔNG HỢP KẾT QUẢ TỰ ĐÁNH GIÁ</h1>`;
   h += buildBangTongHopHtml(data);
   h += `<p class="center no-indent page-break">&nbsp;</p>`;
 
   // Nội dung
-  h += `<h1>Phần I. Cơ sở dữ liệu</h1>` + mdToHtml(get('coso'));
+  h += `<h1>PHẦN I. CƠ SỞ DỮ LIỆU</h1>` + mdToHtml(get('coso'));
   h += `<p class="center no-indent page-break">&nbsp;</p>`;
-  h += `<h1>Phần II. Tự đánh giá</h1>`;
-  h += `<h2>A. Đặt vấn đề</h2>` + mdToHtml(get('datvande'));
-  h += `<h2>B. Tự đánh giá</h2>`;
+  h += `<h1>PHẦN II. TỰ ĐÁNH GIÁ</h1>`;
+  h += `<h2>A. ĐẶT VẤN ĐỀ</h2>` + mdToHtml(get('datvande'));
+  h += `<h2>B. TỰ ĐÁNH GIÁ</h2>`;
   STANDARDS.forEach(std => {
-    h += `<h3>Tiêu chuẩn ${std.id}: ${std.name}</h3>`;
+    h += `<h3>TIÊU CHUẨN ${std.id}: ${U(std.name)}</h3>`;
     h += `<h4>Mở đầu</h4>` + mdToHtml(get(`std-${std.id}-modau`));
     std.criteria.forEach(cr => {
       h += mdToHtml(get(`tc-${std.id}-${cr.num}`));
@@ -1154,11 +1510,11 @@ th { text-align: center; font-weight: bold; }
     h += `<h4>Kết luận về Tiêu chuẩn ${std.id}</h4>` + mdToHtml(get(`std-${std.id}-ketluan`));
   });
   h += `<p class="center no-indent page-break">&nbsp;</p>`;
-  h += `<h1>Phần III. Kết luận chung</h1>` + mdToHtml(get('ketluan'));
+  h += `<h1>PHẦN III. KẾT LUẬN CHUNG</h1>` + mdToHtml(get('ketluan'));
 
   // Phần IV. Phụ lục — danh mục minh chứng
   h += `<p class="center no-indent page-break">&nbsp;</p>`;
-  h += `<h1>Phần IV. Phụ lục — Danh mục minh chứng</h1>`;
+  h += `<h1>PHẦN IV. PHỤ LỤC — DANH MỤC MINH CHỨNG</h1>`;
   h += buildPhuLucHtml(data);
 
   h += `</div></body></html>`;
@@ -1260,16 +1616,32 @@ const buildPhuLucHtml = (data) => {
 };
 
 /* ============================================================
+   WORKSPACE TAB (topbar)
+============================================================ */
+function WsTab({ id, active, onClick, icon: Ic, label, badge }) {
+  return (
+    <button className={`ws-tab ${active===id?'active':''}`} onClick={() => onClick(id)} title={label}>
+      <Ic className="w-3.5 h-3.5"/>
+      <span>{label}</span>
+      {badge != null && badge > 0 && <span className="ws-badge">{badge}</span>}
+    </button>
+  );
+}
+
+/* ============================================================
    MAIN APP
 ============================================================ */
 function App() {
-  const [data, setData] = useState(() => loadLS(LS_KEY) || emptyReport());
+  const [data, setData] = useState(() => migrateReport(loadLS(LS_KEY)));
   const [settings, setSettings] = useState(() => {
     const s = loadLS(LS_SETTINGS) || {};
     return { appsScriptUrl: DEFAULT_APPS_SCRIPT_URL, ...s };
   });
   const [ui, setUi] = useState(() => loadLS(LS_UI) || { openStd: { 1:true,2:true,3:true,4:true,5:true } });
+  const [workspace, setWorkspace] = useState(() => loadLS('tdgth_workspace_v1') || 'dashboard');
   const [activeId, setActiveId] = useState(null);
+  const [mobileSidebar, setMobileSidebar] = useState(false);  // mở/đóng sidebar trên mobile
+  const [moreMenu, setMoreMenu] = useState(false);            // overflow menu cho các nút phụ
   const [editing, setEditing] = useState(null);
   const [editBuf, setEditBuf] = useState('');
   const [generating, setGenerating] = useState(null);
@@ -1277,6 +1649,19 @@ function App() {
   const [modal, setModal] = useState(null);
   const [search, setSearch] = useState('');
   const docScrollRef = useRef(null);
+
+  useEffect(() => saveLS('tdgth_workspace_v1', workspace), [workspace]);
+
+  // Đóng overflow menu khi click ra ngoài
+  useEffect(() => {
+    if (!moreMenu) return;
+    const h = (e) => { if (!e.target.closest('.tb-more')) setMoreMenu(false); };
+    document.addEventListener('click', h);
+    return () => document.removeEventListener('click', h);
+  }, [moreMenu]);
+
+  // Đóng mobile sidebar khi chuyển workspace hoặc chọn tiêu chí
+  useEffect(() => { setMobileSidebar(false); }, [workspace, activeId]);
 
   const sections = useMemo(() => buildSectionsList(), []);
   const yearStr = `${data.schoolInfo.academicYearFrom}-${data.schoolInfo.academicYearTo}`;
@@ -1391,15 +1776,30 @@ function App() {
   return (
     <div className="app">
       <div className="topbar">
+        {/* Hamburger — chỉ hiện trên mobile, mở sidebar dàn ý khi ở workspace report */}
+        {workspace === 'report' && (
+          <button className="hamburger-btn" onClick={() => setMobileSidebar(v => !v)} title="Menu dàn ý">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+              <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+            </svg>
+          </button>
+        )}
         <div className="brand-logo">📚</div>
         <div style={{lineHeight:1.15}}>
-          <div className="display brand-title" style={{fontSize:14.5,fontWeight:700,letterSpacing:'0.02em'}}>BÁO CÁO TỰ ĐÁNH GIÁ</div>
-          <div className="brand-sub" style={{fontSize:10.5,marginTop:2,letterSpacing:'0.03em'}}>KIỂM ĐỊNH CHẤT LƯỢNG GIÁO DỤC TIỂU HỌC</div>
+          <div className="display brand-title" style={{fontSize:14,fontWeight:700,letterSpacing:'0.02em'}}>HỆ THỐNG KĐCLGD</div>
+          <div className="brand-sub" style={{fontSize:10.5,marginTop:2,letterSpacing:'0.03em'}}>TRƯỜNG TIỂU HỌC · TT 17/2018 + TT 22/2024</div>
         </div>
-        <div style={{flex:1,display:'flex',alignItems:'center',justifyContent:'center',gap:10}}>
+        {/* Workspace tabs — chuyển đổi giữa 4 khu làm việc của hệ thống */}
+        <div style={{display:'flex',alignItems:'center',gap:2,marginLeft:14}}>
+          <WsTab id="dashboard" active={workspace} onClick={setWorkspace} icon={IHome} label="Tổng quan"/>
+          <WsTab id="report"    active={workspace} onClick={setWorkspace} icon={IDoc}  label="Báo cáo TĐG"/>
+          <WsTab id="evidence"  active={workspace} onClick={setWorkspace} icon={IClip} label="Minh chứng" badge={data.evidence?.length || null}/>
+          <WsTab id="plan"      active={workspace} onClick={setWorkspace} icon={ICal}  label="Kế hoạch"/>
+        </div>
+        <div style={{flex:1,display:'flex',alignItems:'center',justifyContent:'flex-end',gap:10,paddingRight:6}}>
           <button className="sch-pill" onClick={() => setModal('school')} title="Chỉnh thông tin trường">
             <ISchool className="w-3.5 h-3.5"/>
-            <span style={{fontWeight:500}}>{data.schoolInfo.name || 'Chưa đặt tên trường'}</span>
+            <span style={{fontWeight:500,maxWidth:200,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{data.schoolInfo.name || 'Chưa đặt tên trường'}</span>
             <span style={{opacity:0.7}}>· {yearStr}</span>
           </button>
         </div>
@@ -1408,54 +1808,93 @@ function App() {
             : data.savedAt ? <>✓ Drive {new Date(data.savedAt).toLocaleTimeString('vi-VN', { hour:'2-digit', minute:'2-digit' })}</>
             : <>💾 Tự lưu máy</>}
         </div>
-        <div style={{display:'flex',gap:4}}>
+        <div style={{display:'flex',gap:4,alignItems:'center'}}>
+          {/* Nút chính luôn hiện: AI toàn bộ + Xuất */}
           <button className="btn btn-soft btn-xs" onClick={generateAll} disabled={!!generating} title="Dùng AI viết toàn bộ">
-            <ISpark className="w-3.5 h-3.5"/> AI toàn bộ
-          </button>
-          <button className="btn btn-xs" onClick={() => setModal('guide')} title={active ? `Xem chỉ báo cho: ${active.label}` : 'Hướng dẫn sử dụng'}>
-            <IInfo className="w-3.5 h-3.5"/> {active && active.kind === 'tieuchi' ? `Chỉ báo ${active.meta.standardId}.${active.meta.criterion.num}` : 'Hướng dẫn'}
-          </button>
-          <button className="btn btn-xs" onClick={saveToCloud} title="Lưu lên Drive">
-            <ICloudUp className="w-3.5 h-3.5"/>
-          </button>
-          <button className="btn btn-xs" onClick={() => setModal('cloud')} title="Báo cáo trên Drive">
-            <IList className="w-3.5 h-3.5"/>
-          </button>
-          <button className="btn btn-xs" onClick={() => setModal('sources')} title="Tư liệu & minh chứng">
-            <IFolder className="w-3.5 h-3.5"/>
+            <ISpark className="w-3.5 h-3.5"/> <span className="tb-hide-sm">AI toàn bộ</span>
           </button>
           <button className="btn btn-xs" onClick={exportWord} title="Xuất file Word .doc">
-            <IDown className="w-3.5 h-3.5"/> Xuất
+            <IDown className="w-3.5 h-3.5"/> <span className="tb-hide-sm">Xuất</span>
           </button>
-        </div>
-      </div>
-
-      <div className="main">
-        <OutlineSidebar
-          standards={STANDARDS} data={data} ui={ui} setUi={setUi}
-          activeId={activeId} onClick={onOutlineClick}
-          generating={generating} search={search} setSearch={setSearch}
-          pct={pct} done={doneSections} total={totalSections}
-          onNew={newReport}
-        />
-        <div className="doc-scroll" ref={docScrollRef}>
-          <div className="doc-wrap">
-            <div className="doc-page">
-              <DocumentView
-                data={data} standards={STANDARDS} sections={sections}
-                activeId={activeId} setActiveId={setActiveId}
-                editing={editing} editBuf={editBuf} setEditBuf={setEditBuf}
-                startEdit={startEdit} saveEdit={saveEdit} cancelEdit={cancelEdit}
-                generating={generating} generateOne={generateOne}
-                yearStr={yearStr}
-              />
-            </div>
-            <div style={{textAlign:'center',marginTop:28,color:'var(--faint)',fontSize:11}}>
-              Căn cứ: TT 17/2018 · TT 22/2024 · CV 5932/BGDĐT-QLCL · TT 13/2020 (sửa bởi TT 23/2024) &nbsp;·&nbsp; TĐG-TH v1.0
-            </div>
+          {/* Các nút phụ — ẩn trên mobile, gom vào overflow menu */}
+          <button className="btn btn-xs tb-hide-sm" onClick={() => setModal(active && active.kind === 'tieuchi' ? 'guide' : 'help')} title={active && active.kind === 'tieuchi' ? `Xem chỉ báo cho: ${active.label}` : 'Hướng dẫn chi tiết toàn hệ thống'}>
+            <IInfo className="w-3.5 h-3.5"/> {active && active.kind === 'tieuchi' ? `Chỉ báo ${active.meta.standardId}.${active.meta.criterion.num}` : 'Hướng dẫn'}
+          </button>
+          <button className="btn btn-xs tb-hide-sm" onClick={saveToCloud} title="Lưu lên Drive">
+            <ICloudUp className="w-3.5 h-3.5"/>
+          </button>
+          <button className="btn btn-xs tb-hide-sm" onClick={() => setModal('cloud')} title="Báo cáo trên Drive">
+            <IList className="w-3.5 h-3.5"/>
+          </button>
+          <button className="btn btn-xs tb-hide-sm" onClick={() => setModal('sources')} title="Tư liệu & minh chứng">
+            <IFolder className="w-3.5 h-3.5"/>
+          </button>
+          {/* Overflow menu — chỉ hiện trên mobile (CSS: .tb-more display:none default, block ở ≤768px) */}
+          <div className="tb-more">
+            <button className="btn btn-xs" onClick={(e) => { e.stopPropagation(); setMoreMenu(v => !v); }} title="Thêm">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
+            </button>
+            {moreMenu && (
+              <div className="tb-more-menu">
+                <button onClick={() => { setModal(active && active.kind === 'tieuchi' ? 'guide' : 'help'); setMoreMenu(false); }}>
+                  <IInfo className="w-4 h-4"/> {active && active.kind === 'tieuchi' ? `Chỉ báo ${active.meta.standardId}.${active.meta.criterion.num}` : 'Hướng dẫn'}
+                </button>
+                <button onClick={() => { setModal('school'); setMoreMenu(false); }}><ISchool className="w-4 h-4"/> Thông tin trường</button>
+                <button onClick={() => { setModal('sources'); setMoreMenu(false); }}><IFolder className="w-4 h-4"/> Tư liệu &amp; minh chứng</button>
+                <button onClick={() => { saveToCloud(); setMoreMenu(false); }}><ICloudUp className="w-4 h-4"/> Lưu lên Drive</button>
+                <button onClick={() => { setModal('cloud'); setMoreMenu(false); }}><IList className="w-4 h-4"/> Báo cáo trên Drive</button>
+              </div>
+            )}
           </div>
         </div>
       </div>
+
+      {/* MAIN — layout thay đổi theo workspace đang chọn */}
+      {workspace === 'report' && (
+        <div className="main">
+          <div className={`outline-wrapper ${mobileSidebar ? 'open' : ''}`} style={{display:'contents'}}>
+            <OutlineSidebar
+              standards={STANDARDS} data={data} ui={ui} setUi={setUi}
+              activeId={activeId} onClick={onOutlineClick}
+              generating={generating} search={search} setSearch={setSearch}
+              pct={pct} done={doneSections} total={totalSections}
+              onNew={newReport}
+              mobileOpen={mobileSidebar}
+            />
+          </div>
+          {/* Backdrop mobile — click đóng sidebar */}
+          {mobileSidebar && <div className="mobile-backdrop" onClick={() => setMobileSidebar(false)}/>}
+          <div className="doc-scroll" ref={docScrollRef}>
+            <div className="doc-wrap">
+              <div className="doc-page">
+                <DocumentView
+                  data={data} standards={STANDARDS} sections={sections}
+                  activeId={activeId} setActiveId={setActiveId}
+                  editing={editing} editBuf={editBuf} setEditBuf={setEditBuf}
+                  startEdit={startEdit} saveEdit={saveEdit} cancelEdit={cancelEdit}
+                  generating={generating} generateOne={generateOne}
+                  yearStr={yearStr}
+                />
+              </div>
+              <div style={{textAlign:'center',marginTop:28,color:'var(--faint)',fontSize:11}}>
+                Căn cứ: TT 17/2018 · TT 22/2024 · CV 5932/BGDĐT-QLCL · TT 13/2020 (sửa bởi TT 23/2024) &nbsp;·&nbsp; KĐCLGD-TH v2.0
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {workspace === 'dashboard' && (
+        <DashboardWorkspace data={data} setData={setData} standards={STANDARDS}
+          sections={sections} aiSections={aiSections}
+          setWorkspace={setWorkspace} setModal={setModal} setActiveId={setActiveId}
+          generateAll={generateAll} generating={generating} saveToCloud={saveToCloud} exportWord={exportWord}/>
+      )}
+      {workspace === 'evidence' && (
+        <EvidenceWorkspace data={data} setData={setData} standards={STANDARDS} showToast={showToast}/>
+      )}
+      {workspace === 'plan' && (
+        <PlanWorkspace data={data} setData={setData} showToast={showToast}/>
+      )}
 
       {modal === 'school' && <SchoolInfoModal schoolInfo={data.schoolInfo} onSave={(info) => { setData(d => ({ ...d, schoolInfo: info })); setModal(null); showToast('✓ Đã cập nhật'); }} onClose={() => setModal(null)}/>}
       {modal === 'sources' && <SourcesModal sources={data.sources} settings={settings} onSave={(s) => { setData(d => ({ ...d, sources: s })); setModal(null); showToast('✓ Đã cập nhật tư liệu'); }} onClose={() => setModal(null)}/>}
@@ -1464,6 +1903,7 @@ function App() {
         generateOne={(s) => { generateOne(s); setModal(null); }}
         startEdit={(id) => { startEdit(id); setModal(null); }}
         onClose={() => setModal(null)}/>}
+      {modal === 'help' && <HelpModal setWorkspace={setWorkspace} setModal={setModal} onClose={() => setModal(null)}/>}
       {toast && <div className="toast">{toast}</div>}
     </div>
   );
@@ -1472,7 +1912,7 @@ function App() {
 /* ============================================================
    OUTLINE SIDEBAR
 ============================================================ */
-function OutlineSidebar({ standards, data, ui, setUi, activeId, onClick, generating, search, setSearch, pct, done, total, onNew }) {
+function OutlineSidebar({ standards, data, ui, setUi, activeId, onClick, generating, search, setSearch, pct, done, total, onNew, mobileOpen }) {
   const statusOf = (id) => {
     if (generating === id) return 'gen';
     const g = data.generated[id];
@@ -1484,7 +1924,7 @@ function OutlineSidebar({ standards, data, ui, setUi, activeId, onClick, generat
   const matchSearch = (txt) => !search || txt.toLowerCase().includes(search.toLowerCase());
 
   return (
-    <div className="outline">
+    <div className={`outline ${mobileOpen ? 'open' : ''}`}>
       <div className="outline-h">
         <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:8}}>
           <div style={{fontSize:12,color:'#fff',fontWeight:600,letterSpacing:'0.02em'}}>📋 Dàn ý</div>
@@ -1649,8 +2089,8 @@ function DocumentView({ data, standards, sections, activeId, setActiveId, editin
   return (
     <div>
       <div style={{textAlign:'center',paddingBottom:20,borderBottom:'1px solid var(--line-soft)',marginBottom:24,fontFamily:"'Times New Roman',serif"}}>
-        <div style={{fontSize:'13pt',fontWeight:'bold',textTransform:'uppercase',color:'var(--ink)'}}>UBND {info.ward ? info.ward.toUpperCase() : '...'}</div>
-        <div style={{fontSize:'14pt',fontWeight:'bold',marginTop:4,color:'var(--ink)',textTransform:'uppercase'}}>{(info.name || 'TRƯỜNG ...').toUpperCase()}</div>
+        <div style={{fontSize:'13pt',fontWeight:'bold',color:'var(--ink)'}}>UBND {info.ward ? U(info.ward) : '...'}</div>
+        <div style={{fontSize:'14pt',fontWeight:'bold',marginTop:4,color:'var(--ink)'}}>{U(info.name || 'TRƯỜNG ...')}</div>
         <h1 style={{fontFamily:"'Times New Roman',serif",fontSize:'24pt',fontWeight:'bold',margin:'28px 0 8px',color:'var(--ink)',textTransform:'uppercase',letterSpacing:0}}>BÁO CÁO TỰ ĐÁNH GIÁ</h1>
         <div style={{fontSize:'13pt',color:'var(--ink)',fontStyle:'italic'}}>(Kiểm định chất lượng giáo dục — cấp Tiểu học)</div>
         <div style={{marginTop:14,fontSize:'13pt',color:'var(--ink)',fontWeight:'bold',textTransform:'uppercase'}}>
@@ -1684,7 +2124,7 @@ function DocumentView({ data, standards, sections, activeId, setActiveId, editin
         <div key={std.id}>
           <div className="doc-section" style={{marginTop:36,padding:'14px 16px',background:'linear-gradient(to right, #f0f9ff, transparent)',borderRadius:8,borderLeft:'3px solid var(--brand)'}}>
             <div className="section-meta" style={{color:'var(--brand-600)'}}>Tiêu chuẩn {std.id}</div>
-            <h3 className="doc-h2" style={{margin:'4px 0',fontFamily:"'Times New Roman',serif"}}>TIÊU CHUẨN {std.id}: {std.name.toUpperCase()}</h3>
+            <h3 className="doc-h2" style={{margin:'4px 0',fontFamily:"'Times New Roman',serif"}}>TIÊU CHUẨN {std.id}: {U(std.name)}</h3>
             <div style={{fontSize:12,color:'var(--ink-muted)',fontStyle:'italic'}}>{std.refs}</div>
           </div>
           <SectionBlock section={sections.find(s => s.id === `std-${std.id}-modau`)}>
@@ -1812,6 +2252,1603 @@ function PhuLucView({ data }) {
         {lines.slice(0, 60).map((l, i) => <div key={i}>{l}</div>)}
         {lines.length > 60 && <div style={{color:'var(--faint)',fontStyle:'italic',marginTop:8}}>… và {lines.length - 60} dòng khác (đầy đủ trong file Word xuất ra)</div>}
       </div>
+    </div>
+  );
+}
+
+/* ============================================================
+   AUTO-DETECT trạng thái từng bước dựa trên dữ liệu thực tế.
+   User có thể override bằng cách tick/untick thủ công (wf.done = true/false).
+   Trả về: 'done' | 'auto-done' | 'current' | 'pending'
+============================================================ */
+const isStepAutoDone = (stepId, data) => {
+  const info = data.schoolInfo || {};
+  const plan = data.plan || {};
+  if (stepId === 1) {
+    const council = info.council || [];
+    const filled = council.filter(m => m.name && m.name.trim()).length;
+    return filled >= 7;
+  }
+  if (stepId === 2) {
+    return !!(plan.purpose && plan.scope && plan.startDate && plan.endDate && plan.methodology);
+  }
+  if (stepId === 3) {
+    const ev = data.evidence || [];
+    const evList = (data.sources?.evidenceList || '').split('\n').filter(l => /\[H\d-\d+\.\d+-\d+\]/.test(l));
+    return (ev.length + evList.length) >= 30;
+  }
+  if (stepId === 4) {
+    let withLevel = 0, total = 0;
+    STANDARDS.forEach(s => s.criteria.forEach(cr => {
+      total++;
+      if (extractSelfAssessLevel(data.generated[`tc-${s.id}-${cr.num}`]?.content) !== null) withLevel++;
+    }));
+    return total > 0 && (withLevel / total) >= 0.8;
+  }
+  if (stepId === 5) {
+    const list = buildSectionsList().filter(s => s.kind !== 'computed');
+    const done = list.filter(s => data.generated[s.id]?.status === 'done').length;
+    return done === list.length;
+  }
+  return false;  // step 6, 7 cần user tick thủ công
+};
+
+const getStepStatus = (stepId, workflow, data) => {
+  const wf = (workflow || []).find(w => w.id === stepId) || {};
+  if (wf.done === true) return 'done';
+  if (wf.done === false) {
+    // User explicitly marked as not done
+  } else if (isStepAutoDone(stepId, data)) return 'auto-done';
+  // Check nếu là bước hiện tại (các bước trước đã done hoặc auto-done)
+  const prevAllDone = (workflow || []).slice(0, stepId - 1).every(w => {
+    if (w.done === true) return true;
+    if (w.done === false) return false;
+    return isStepAutoDone(w.id, data);
+  });
+  return prevAllDone ? 'current' : 'pending';
+};
+
+/* ============================================================
+   WORKSPACE: TỔNG QUAN (Dashboard)
+   Hiển thị quy trình 7 bước CV 5932, mức độ đạt được so với mục tiêu,
+   phân tích điểm cần cải thiện.
+============================================================ */
+function DashboardWorkspace({ data, setData, standards, sections, aiSections, setWorkspace, setModal, setActiveId, generateAll, generating, saveToCloud, exportWord }) {
+  const info = data.schoolInfo || {};
+  const workflow = data.workflow || [];
+
+  // Thống kê tiêu chí theo tiêu chuẩn (parse "Đạt Mức X" từ nội dung đã sinh)
+  const stdStats = standards.map(std => {
+    const levels = std.criteria.map(cr => extractSelfAssessLevel(data.generated[`tc-${std.id}-${cr.num}`]?.content));
+    const validLevels = levels.filter(l => l !== null && l >= 1);
+    const done = levels.filter(l => l !== null).length;
+    const total = std.criteria.length;
+    const notReached = levels.filter(l => l === 0).length;
+    // Mức đạt của tiêu chuẩn = min của các tiêu chí (nếu tất cả đã đánh giá & không có "không đạt")
+    const minLevel = (validLevels.length === total && notReached === 0) ? Math.min(...validLevels) : null;
+    return { id: std.id, name: std.name, done, total, validLevels, notReached, minLevel, levels };
+  });
+
+  const totalDone = aiSections.filter(s => data.generated[s.id]?.status === 'done').length;
+  const totalAll = aiSections.length;
+  const pct = Math.round((totalDone / totalAll) * 100);
+  const evidenceCount = (data.evidence || []).length + (data.sources?.evidenceList || '').split('\n').filter(l => /\[H\d-\d+\.\d+-\d+\]/.test(l)).length;
+  // Đếm các bước done/auto-done
+  const stepStatuses = CV5932_STEPS.map(s => getStepStatus(s.id, workflow, data));
+  const completedSteps = stepStatuses.filter(s => s === 'done' || s === 'auto-done').length;
+  // Mức đạt chung = min của tất cả 5 TC (hoặc null nếu chưa đủ dữ liệu)
+  const allStdLevels = stdStats.map(s => s.minLevel).filter(l => l !== null);
+  const overallLevel = allStdLevels.length === 5 ? Math.min(...allStdLevels) : null;
+  const targetLevel = info.mucDangKy || 2;
+  // TC yếu nhất (kéo mức chung xuống)
+  const weakest = stdStats.filter(s => s.minLevel !== null).sort((a,b) => a.minLevel - b.minLevel).slice(0, 2);
+
+  const setStepDone = (stepId, done) => {
+    setData(d => ({
+      ...d,
+      workflow: (d.workflow || []).map(s => s.id === stepId ? {
+        ...s, done,
+        completedAt: done ? new Date().toISOString().slice(0,10) : ''
+      } : s)
+    }));
+  };
+
+  const [openDetail, setOpenDetail] = useState(null);  // stepId đang mở form chi tiết
+
+  const updateStep = (stepId, field, value) => {
+    setData(d => ({
+      ...d,
+      workflow: (d.workflow || []).map(s => s.id === stepId ? { ...s, [field]: value } : s)
+    }));
+  };
+
+  // Gợi ý "Bước tiếp theo" thông minh — dựa vào stepStatuses đã auto-detect
+  const nextHint = (() => {
+    if (!info.name) return { icon: '📍', label: 'Nhập thông tin trường', action: () => setModal('school') };
+    const firstIdx = stepStatuses.findIndex(st => st !== 'done' && st !== 'auto-done');
+    if (firstIdx === -1) return { icon: '🎉', label: 'Đã hoàn thành cả 7 bước! Xuất báo cáo Word →', action: () => exportWord() };
+    const step = CV5932_STEPS[firstIdx];
+    const actions = {
+      1: { icon: '👥', label: 'Thành lập Hội đồng TĐG', action: () => setModal('school') },
+      2: { icon: '📅', label: 'Lập Kế hoạch TĐG', action: () => setWorkspace('plan') },
+      3: { icon: '🗂', label: 'Quản lý Minh chứng', action: () => setWorkspace('evidence') },
+      4: { icon: '📋', label: 'Đánh giá tiêu chí (tab Báo cáo)', action: () => setWorkspace('report') },
+      5: { icon: '✨', label: 'Soạn Báo cáo TĐG (AI hỗ trợ)', action: () => setWorkspace('report') },
+      6: { icon: '📢', label: 'Công bố báo cáo (tick khi hoàn tất)', action: () => setStepDone(6, true) },
+      7: { icon: '🚀', label: 'Triển khai sau TĐG (tick khi hoàn tất)', action: () => setStepDone(7, true) }
+    };
+    return { ...actions[step.id], stepNum: step.id, stepName: step.name };
+  })();
+
+  return (
+    <div className="ws-main">
+      <div className="ws-wrap">
+        <h1 className="ws-title">Tổng quan · {info.name || 'Chưa đặt tên trường'}</h1>
+        <p className="ws-subtitle">Quy trình 7 bước tự đánh giá theo CV 5932/BGDĐT-QLCL · Năm học {data.schoolInfo.academicYearFrom}-{data.schoolInfo.academicYearTo}</p>
+
+        {/* 4 stat cards */}
+        <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:12,marginBottom:20}}>
+          <div className="ws-stat">
+            <div className="ws-stat-label">Tiến độ 7 bước</div>
+            <div className="ws-stat-value">{completedSteps}<span style={{fontSize:16,color:'var(--faint)'}}>/7</span></div>
+            <div className="ws-stat-sub">{completedSteps === 7 ? 'Đã hoàn thành' : `Còn ${7-completedSteps} bước`}</div>
+          </div>
+          <div className="ws-stat">
+            <div className="ws-stat-label">Nội dung báo cáo</div>
+            <div className="ws-stat-value">{pct}<span style={{fontSize:16,color:'var(--faint)'}}>%</span></div>
+            <div className="ws-stat-sub">{totalDone}/{totalAll} mục đã sinh</div>
+          </div>
+          <div className="ws-stat">
+            <div className="ws-stat-label">Minh chứng đã có</div>
+            <div className="ws-stat-value">{evidenceCount}</div>
+            <div className="ws-stat-sub">Quản lý ở tab Minh chứng</div>
+          </div>
+          <div className="ws-stat">
+            <div className="ws-stat-label">Hội đồng TĐG</div>
+            <div className="ws-stat-value">{(info.council || []).length}</div>
+            <div className="ws-stat-sub">thành viên · {info.mucDangKy ? `Đăng ký Mức ${info.mucDangKy}` : 'Chưa chọn mức'}</div>
+          </div>
+        </div>
+
+        {/* Banner "Bước tiếp theo" */}
+        <div style={{padding:'14px 20px',background:'linear-gradient(135deg, var(--brand-50), #fff)',border:'1px solid var(--brand-100)',borderRadius:12,marginBottom:20,display:'flex',alignItems:'center',justifyContent:'space-between',gap:14}}>
+          <div style={{flex:1,minWidth:0}}>
+            <div style={{fontSize:11.5,fontWeight:600,color:'var(--brand-600)',textTransform:'uppercase',letterSpacing:'0.06em',marginBottom:3}}>Bước tiếp theo</div>
+            <div style={{fontSize:16,fontWeight:600,color:'var(--ink)'}}>
+              {nextHint.icon} {nextHint.label}
+              {nextHint.stepNum && <span style={{fontSize:12,fontWeight:500,color:'var(--faint)',marginLeft:8}}>— Bước {nextHint.stepNum}/{CV5932_STEPS.length}</span>}
+            </div>
+          </div>
+          <button className="btn btn-primary" onClick={nextHint.action}><ISpark className="w-4 h-4"/> Thực hiện</button>
+        </div>
+
+        <div className="ws-grid">
+          {/* 7 bước quy trình CV 5932 — khối màu rõ nét */}
+          <div className="ws-card">
+            <h3 className="ws-card-h"><IFlag className="w-4 h-4" style={{color:'var(--brand-600)'}}/> Quy trình 7 bước tự đánh giá <span style={{fontWeight:400,color:'var(--faint)',fontSize:12}}>· CV 5932</span></h3>
+            <div style={{display:'flex',flexDirection:'column',gap:10}}>
+              {CV5932_STEPS.map(step => {
+                const state = workflow.find(w => w.id === step.id) || {};
+                const status = stepStatuses[step.id - 1];  // 'done' | 'auto-done' | 'current' | 'pending'
+                return (
+                  <div key={step.id} className={`wf-step ${status}`}>
+                    <div className="wf-num">
+                      {status === 'done' || status === 'auto-done' ? <ICheck className="w-5 h-5"/> : step.id}
+                    </div>
+                    <div className="wf-body">
+                      <div className="wf-name">
+                        {step.name}
+                        {status === 'done' && <span className="wf-badge done">✓ Hoàn thành</span>}
+                        {status === 'auto-done' && <span className="wf-badge auto">Tự phát hiện xong</span>}
+                        {status === 'current' && <span className="wf-badge current">Đang làm</span>}
+                      </div>
+                      <div className="wf-desc">{step.desc}</div>
+                      {(state.deadline || state.assignee || state.note || state.completedAt) && (
+                        <div className="wf-meta">
+                          {state.assignee && <span>👤 {state.assignee}</span>}
+                          {state.deadline && <span>📅 Hạn: {state.deadline}</span>}
+                          {state.completedAt && <span>✓ {state.completedAt}</span>}
+                          {state.note && <span title={state.note}>💬 {state.note.slice(0, 40)}{state.note.length > 40 ? '…' : ''}</span>}
+                        </div>
+                      )}
+                    </div>
+                    <div className="wf-actions">
+                      {status === 'done' ? (
+                        <button className="btn btn-xs" onClick={() => setStepDone(step.id, false)} title="Bỏ đánh dấu hoàn thành">↶ Mở lại</button>
+                      ) : status === 'auto-done' ? (
+                        <button className="btn btn-xs btn-primary" onClick={() => setStepDone(step.id, true)} title="Xác nhận bước này đã xong chính thức">✓ Xác nhận</button>
+                      ) : (
+                        <button className="btn btn-xs btn-soft" onClick={() => setStepDone(step.id, true)}>✓ Đánh dấu xong</button>
+                      )}
+                      <button className="wf-detail-btn" onClick={() => setOpenDetail(openDetail === step.id ? null : step.id)} title="Nhập người phụ trách, thời hạn, ghi chú">
+                        ✎ {openDetail === step.id ? 'Đóng' : 'Phụ trách / Hạn'}
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            {/* Form chi tiết cho step đang chọn — hiện trong card, không trong row */}
+            {openDetail && (() => {
+              const step = CV5932_STEPS.find(s => s.id === openDetail);
+              const state = workflow.find(w => w.id === openDetail) || {};
+              return (
+                <div style={{marginTop:14,padding:'14px 16px',background:'#f0f9ff',border:'1px dashed var(--brand)',borderRadius:10}}>
+                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
+                    <div style={{fontSize:12.5,fontWeight:600,color:'var(--brand-600)'}}>✎ Chi tiết Bước {step.id}: {step.name}</div>
+                    <button className="btn btn-xs btn-ghost" onClick={() => setOpenDetail(null)}><IX className="w-3 h-3"/> Đóng</button>
+                  </div>
+                  <div style={{display:'grid',gridTemplateColumns:'1.2fr 1fr',gap:10,marginBottom:10}}>
+                    <div>
+                      <div className="wf-detail-label">Người phụ trách</div>
+                      <input type="text" placeholder="VD: Hiệu trưởng / Thư ký HĐ / Ông A" value={state.assignee || ''} onChange={e => updateStep(openDetail, 'assignee', e.target.value)} style={{width:'100%',padding:'7px 10px',border:'1px solid var(--line)',borderRadius:6,fontSize:13,fontFamily:'inherit'}}/>
+                    </div>
+                    <div>
+                      <div className="wf-detail-label">Thời hạn hoàn thành</div>
+                      <input type="date" value={state.deadline || ''} onChange={e => updateStep(openDetail, 'deadline', e.target.value)} style={{width:'100%',padding:'7px 10px',border:'1px solid var(--line)',borderRadius:6,fontSize:13,fontFamily:'inherit'}}/>
+                    </div>
+                  </div>
+                  <div className="wf-detail-label">Ghi chú / Tiến độ</div>
+                  <textarea placeholder="Thông tin bổ sung về bước này (tuỳ chọn)" value={state.note || ''} onChange={e => updateStep(openDetail, 'note', e.target.value)} rows={2} style={{width:'100%',padding:'7px 10px',border:'1px solid var(--line)',borderRadius:6,fontSize:13,fontFamily:'inherit',resize:'vertical'}}/>
+                </div>
+              );
+            })()}
+          </div>
+
+          {/* Phân tích mức đạt được — redesign với dividers + phân bố + TC cần chú ý */}
+          <div className="ws-card">
+            <h3 className="ws-card-h" style={{justifyContent:'space-between'}}>
+              <span style={{display:'flex',alignItems:'center',gap:8}}><IClip className="w-4 h-4" style={{color:'var(--brand-600)'}}/> Mức độ đạt được</span>
+              <span style={{fontSize:10.5,fontWeight:500,color:'var(--faint)',fontStyle:'italic'}}>Tự tính · sửa ở tab Báo cáo</span>
+            </h3>
+
+            {/* ============ KHỐI 1: Mục tiêu vs Thực tế ============ */}
+            <div className="sep-dashed"><span>🎯 Mục tiêu vs Thực tế</span></div>
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1px 1fr',gap:14,padding:'18px 20px',background:'linear-gradient(135deg,var(--brand-50),#fff)',borderRadius:12,border:'1px solid var(--brand-100)',alignItems:'center'}}>
+              <div>
+                <div style={{fontSize:10.5,color:'var(--faint)',textTransform:'uppercase',letterSpacing:'0.06em',fontWeight:600,marginBottom:2}}>🎯 Mục tiêu đăng ký</div>
+                <div style={{fontSize:34,fontWeight:700,color:'var(--brand-600)',lineHeight:1.05,fontFamily:"'Inter',sans-serif"}}>Mức {targetLevel}</div>
+                <div style={{fontSize:11.5,color:'var(--ink-muted)',marginTop:3}}>
+                  {targetLevel === 1 ? 'KĐCLGD Mức 1' : targetLevel === 2 ? 'KĐCLGD Mức 2' : targetLevel === 3 ? 'Chuẩn QG Mức 1' : 'Chuẩn QG Mức 2'}
+                </div>
+              </div>
+              <div style={{background:'var(--line)',width:1,height:'70%',justifySelf:'center'}}/>
+              <div style={{textAlign:'right'}}>
+                <div style={{fontSize:10.5,color:'var(--faint)',textTransform:'uppercase',letterSpacing:'0.06em',fontWeight:600,marginBottom:2}}>📊 Thực tế đạt được</div>
+                <div style={{fontSize:34,fontWeight:700,lineHeight:1.05,fontFamily:"'Inter',sans-serif",color: overallLevel === null ? 'var(--faint)' : overallLevel >= targetLevel ? '#15803d' : '#b45309'}}>
+                  {overallLevel === null ? '—' : `Mức ${overallLevel}`}
+                </div>
+                <div style={{fontSize:11.5,color:'var(--ink-muted)',marginTop:3}}>
+                  {overallLevel === null ? 'Chưa đủ dữ liệu' : overallLevel >= targetLevel ? '✓ Đã đạt mục tiêu' : `Còn cách ${targetLevel - overallLevel} mức`}
+                </div>
+              </div>
+            </div>
+
+            {/* ============ KHỐI 2: Ma trận 5 TC × 4 Mức ============ */}
+            <div className="sep-dashed"><span>📐 Ma trận 5 tiêu chuẩn × 4 mức</span></div>
+            <table style={{width:'100%',borderCollapse:'collapse',fontSize:12}}>
+              <thead>
+                <tr>
+                  <th style={{textAlign:'left',padding:'6px 4px',fontSize:10.5,color:'var(--faint)',fontWeight:600,textTransform:'uppercase'}}>Tiêu chuẩn</th>
+                  {[1,2,3,4].map(m => <th key={m} style={{padding:'6px 4px',width:'12%',fontSize:10.5,color:'var(--faint)',fontWeight:600,textTransform:'uppercase'}}>Mức {m}</th>)}
+                  <th style={{padding:'6px 4px',width:'14%',fontSize:10.5,color:'var(--faint)',fontWeight:600,textTransform:'uppercase',textAlign:'right'}}>Đạt</th>
+                </tr>
+              </thead>
+              <tbody>
+                {stdStats.map(s => {
+                  const lvl = s.minLevel;
+                  const isWeak = lvl !== null && lvl < targetLevel;
+                  return (
+                    <tr key={s.id} style={{borderTop:'1px solid var(--line-soft)',background: isWeak ? '#fffbeb' : 'transparent'}}>
+                      <td style={{padding:'7px 4px',fontWeight:500}}>
+                        <span style={{color:'var(--brand-600)',fontWeight:700}}>TC {s.id}.</span> {s.name.length > 30 ? s.name.slice(0,30)+'…' : s.name}
+                      </td>
+                      {[1,2,3,4].map(m => {
+                        const reached = lvl !== null && lvl >= m;
+                        return (
+                          <td key={m} style={{textAlign:'center',padding:'6px 4px',fontSize:15,fontWeight:700,color: reached ? '#15803d' : '#cbd5e1'}}>
+                            {reached ? '●' : '○'}
+                          </td>
+                        );
+                      })}
+                      <td style={{textAlign:'right',padding:'6px 4px',fontWeight:700,fontSize:13,color: lvl === null ? 'var(--faint)' : lvl >= targetLevel ? '#15803d' : '#b45309'}}>
+                        {lvl === null ? (s.done < s.total ? `${s.done}/${s.total}` : 'KĐ') : `Mức ${lvl}`}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+
+            {/* ============ KHỐI 3: Phân bố 24 tiêu chí theo Mức ============ */}
+            {(() => {
+              // Đếm phân bố tất cả 24 tiêu chí theo Mức
+              const dist = { 0:0, 1:0, 2:0, 3:0, 4:0, unknown:0 };
+              standards.forEach(std => std.criteria.forEach(cr => {
+                const lvl = extractSelfAssessLevel(data.generated[`tc-${std.id}-${cr.num}`]?.content);
+                if (lvl === null) dist.unknown++;
+                else dist[lvl]++;
+              }));
+              const totalCr = 24;
+              const rows = [
+                { key: 4, label: 'Đạt Mức 4', color: '#059669', count: dist[4] },
+                { key: 3, label: 'Đạt Mức 3', color: '#15803d', count: dist[3] },
+                { key: 2, label: 'Đạt Mức 2', color: '#0c5da5', count: dist[2] },
+                { key: 1, label: 'Đạt Mức 1', color: '#0ea5e9', count: dist[1] },
+                { key: 0, label: 'Không đạt',  color: '#e11d48', count: dist[0] },
+                { key: 'u', label: 'Chưa đánh giá', color: '#cbd5e1', count: dist.unknown }
+              ];
+              return (
+                <>
+                  <div className="sep-dashed"><span>📊 Phân bố 24 tiêu chí theo Mức</span></div>
+                  <div>
+                    {rows.map(r => (
+                      <div key={r.key} className="dist-row">
+                        <div className="dist-label">{r.label}</div>
+                        <div className="dist-bar">
+                          <div className="dist-fill" style={{width:`${(r.count / totalCr) * 100}%`,background:r.color,minWidth:r.count > 0 ? 26 : 0}}>
+                            {r.count > 0 && r.count}
+                          </div>
+                        </div>
+                        <div className="dist-count">{Math.round((r.count / totalCr) * 100)}%</div>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              );
+            })()}
+
+            {/* ============ KHỐI 4: Tiêu chí cần chú ý ============ */}
+            {(() => {
+              // Liệt kê tiêu chí có Mức thấp nhất (< targetLevel) hoặc Không đạt hoặc Chưa đánh giá
+              const attention = [];
+              standards.forEach(std => std.criteria.forEach(cr => {
+                const lvl = extractSelfAssessLevel(data.generated[`tc-${std.id}-${cr.num}`]?.content);
+                if (lvl === 0) attention.push({ std: std.id, num: cr.num, name: cr.name, lvl, kind: 'notreached' });
+                else if (lvl !== null && lvl < targetLevel) attention.push({ std: std.id, num: cr.num, name: cr.name, lvl, kind: 'low' });
+              }));
+              if (attention.length === 0) return null;
+              return (
+                <>
+                  <div className="sep-dashed"><span>⚠ Tiêu chí cần chú ý</span></div>
+                  <div style={{fontSize:12,color:'var(--ink-muted)',lineHeight:1.65,marginBottom:8}}>
+                    {attention.length} tiêu chí đang thấp hơn mục tiêu <b>Mức {targetLevel}</b>. Click để mở chỉ báo:
+                  </div>
+                  <div style={{display:'flex',flexWrap:'wrap',gap:6}}>
+                    {attention.slice(0, 12).map(a => (
+                      <button key={`${a.std}.${a.num}`} className="btn btn-xs" style={{background: a.kind === 'notreached' ? 'var(--rose-50)' : '#fffbeb',borderColor: a.kind === 'notreached' ? '#fecaca' : '#fde68a',color: a.kind === 'notreached' ? 'var(--rose)' : '#b45309'}}
+                        onClick={() => { setActiveId(`tc-${a.std}-${a.num}`); setWorkspace('report'); }}
+                        title={`${a.name} — ${a.kind === 'notreached' ? 'KHÔNG ĐẠT' : `Đạt Mức ${a.lvl}`}`}>
+                        TC {a.std}.{a.num} · {a.kind === 'notreached' ? 'KĐ' : `M${a.lvl}`}
+                      </button>
+                    ))}
+                    {attention.length > 12 && <span style={{fontSize:11,color:'var(--faint)',alignSelf:'center'}}>…và {attention.length - 12} tiêu chí khác</span>}
+                  </div>
+                </>
+              );
+            })()}
+
+            {/* ============ KHỐI 5: Đề xuất hành động ============ */}
+            <div className="sep-dashed"><span>💡 Đề xuất tiếp theo</span></div>
+            {weakest.length > 0 && overallLevel !== null && overallLevel < targetLevel && (
+              <div style={{padding:'12px 14px',background:'#fffbeb',borderRadius:8,border:'1px solid #fde68a',marginBottom:10}}>
+                <div style={{fontSize:12.5,color:'var(--ink)',lineHeight:1.6}}>
+                  Mức chung bị <b>TC {weakest[0].id}</b> (Mức {weakest[0].minLevel}) kéo xuống. Muốn đạt <b>Mức {targetLevel}</b>, cần nâng các tiêu chí thuộc TC này lên Mức {targetLevel}.
+                </div>
+              </div>
+            )}
+            {overallLevel !== null && overallLevel >= targetLevel && (
+              <div style={{padding:'12px 14px',background:'#f0fdf4',borderRadius:8,border:'1px solid #86efac',marginBottom:10}}>
+                <div style={{fontSize:12.5,color:'var(--ink)',lineHeight:1.6}}>
+                  🎉 Nhà trường đạt <b>Mức {overallLevel}</b>, đáp ứng đăng ký <b>Mức {targetLevel}</b>. Tiếp tục sang Bước 5-6: hoàn thiện báo cáo và công bố.
+                </div>
+              </div>
+            )}
+            {overallLevel === null && (
+              <div style={{padding:'12px 14px',background:'#f8fafc',borderRadius:8,border:'1px solid var(--line)',fontSize:12.5,color:'var(--ink-muted)',lineHeight:1.6,marginBottom:10}}>
+                <b style={{color:'var(--ink)'}}>Cần hoàn tất tự đánh giá</b> tất cả 24 tiêu chí để hệ thống tính được Mức chung. Tiến độ hiện tại: <b>{totalDone}/{totalAll}</b> mục ({pct}%).
+              </div>
+            )}
+            <div style={{display:'flex',gap:8,marginTop:4}}>
+              <button className="btn btn-primary btn-xs" style={{flex:1,justifyContent:'center'}} onClick={() => setWorkspace('report')}>
+                <IDoc className="w-3.5 h-3.5"/> Mở tab Báo cáo TĐG để sửa
+              </button>
+              <button className="btn btn-xs" onClick={generateAll} disabled={!!generating}>
+                <ISpark className="w-3.5 h-3.5"/> AI sinh phần còn thiếu
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Quick actions */}
+        <div className="ws-card" style={{marginTop:20}}>
+          <h3 className="ws-card-h"><ISpark className="w-4 h-4" style={{color:'var(--brand-600)'}}/> Hành động nhanh</h3>
+          <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit, minmax(200px, 1fr))',gap:10}}>
+            <button className="btn btn-primary" onClick={generateAll} disabled={!!generating}><ISpark className="w-4 h-4"/> AI tạo toàn bộ báo cáo</button>
+            <button className="btn" onClick={() => setWorkspace('report')}><IDoc className="w-4 h-4"/> Sang Báo cáo TĐG</button>
+            <button className="btn" onClick={() => setWorkspace('evidence')}><IClip className="w-4 h-4"/> Quản lý minh chứng</button>
+            <button className="btn" onClick={() => setWorkspace('plan')}><ICal className="w-4 h-4"/> Lập kế hoạch TĐG</button>
+            <button className="btn" onClick={() => setModal('school')}><ISchool className="w-4 h-4"/> Thông tin trường & Hội đồng</button>
+            <button className="btn" onClick={() => setModal('sources')}><IFolder className="w-4 h-4"/> Tư liệu & minh chứng</button>
+            <button className="btn" onClick={saveToCloud}><ICloudUp className="w-4 h-4"/> Lưu lên Drive</button>
+            <button className="btn" onClick={exportWord}><IDown className="w-4 h-4"/> Xuất báo cáo Word</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ============================================================
+   WORKSPACE: MINH CHỨNG
+   Quản lý minh chứng dạng CRUD table (thay cho textarea thuần).
+   Tự đồng bộ sang sources.evidenceList để AI sử dụng khi sinh báo cáo.
+============================================================ */
+function EvidenceWorkspace({ data, setData, standards, showToast }) {
+  const [search, setSearch] = useState('');
+  const [filterStd, setFilterStd] = useState('');
+  const [filterStatus, setFilterStatus] = useState('');
+  const [editItem, setEditItem] = useState(null);
+
+  const evidence = data.evidence || [];
+
+  // Import từ evidenceList text (nếu evidence[] rỗng và sources có nội dung)
+  const importFromText = () => {
+    const text = data.sources?.evidenceList || '';
+    const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+    const items = [];
+    lines.forEach(l => {
+      const m = l.match(/\[H(\d)-(\d+)\.(\d+)-(\d+)\]\s*(.+)/);
+      if (m) {
+        items.push({
+          id: `ev_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+          code: `[H${m[1]}-${m[2]}.${m[3]}-${m[4]}]`,
+          title: m[5].trim(),
+          standardId: parseInt(m[1]),
+          criterionNum: parseInt(m[3]),
+          source: '', collectedBy: '', collectedAt: '', fileUrl: '', status: 'pending', note: ''
+        });
+      }
+    });
+    if (items.length === 0) { showToast('Không tìm thấy mã [Hx-x.x-xx] trong text'); return; }
+    setData(d => ({ ...d, evidence: [...(d.evidence || []), ...items] }));
+    showToast(`✓ Đã import ${items.length} minh chứng`);
+  };
+
+  // Export ra text để AI dùng
+  const syncToText = () => {
+    const text = evidence.map(e => `${e.code} ${e.title}`).join('\n');
+    setData(d => ({ ...d, sources: { ...d.sources, evidenceList: text } }));
+    showToast('✓ Đã đồng bộ sang Tư liệu (AI sẽ dùng khi sinh báo cáo)');
+  };
+
+  const addNew = () => setEditItem({
+    id: `ev_${Date.now()}_${Math.random().toString(36).slice(2,7)}`,
+    code: '', title: '', standardId: 1, criterionNum: 1,
+    source: '', collectedBy: '', collectedAt: '', fileUrl: '', status: 'pending', note: '', _isNew: true
+  });
+
+  const saveItem = (item) => {
+    const { _isNew, ...clean } = item;
+    if (_isNew) {
+      setData(d => ({ ...d, evidence: [...(d.evidence || []), clean] }));
+    } else {
+      setData(d => ({ ...d, evidence: (d.evidence || []).map(e => e.id === clean.id ? clean : e) }));
+    }
+    setEditItem(null);
+    showToast('✓ Đã lưu minh chứng');
+  };
+
+  const deleteItem = (id) => {
+    if (!confirm('Xoá minh chứng này?')) return;
+    setData(d => ({ ...d, evidence: (d.evidence || []).filter(e => e.id !== id) }));
+    showToast('✓ Đã xoá');
+  };
+
+  const filtered = evidence.filter(e => {
+    if (filterStd && String(e.standardId) !== filterStd) return false;
+    if (filterStatus && e.status !== filterStatus) return false;
+    if (search) {
+      const s = search.toLowerCase();
+      if (!(e.code || '').toLowerCase().includes(s) && !(e.title || '').toLowerCase().includes(s) && !(e.source || '').toLowerCase().includes(s)) return false;
+    }
+    return true;
+  });
+
+  // Thống kê
+  const stats = {
+    total: evidence.length,
+    pending: evidence.filter(e => e.status === 'pending').length,
+    collected: evidence.filter(e => e.status === 'collected').length,
+    verified: evidence.filter(e => e.status === 'verified').length
+  };
+
+  return (
+    <div className="ws-main">
+      <div className="ws-wrap">
+        <h1 className="ws-title">Quản lý minh chứng</h1>
+        <p className="ws-subtitle">Danh mục minh chứng có cấu trúc · Mã [Hx-x.x-xx] · Nguồn · Người thu thập · Ngày · File Drive · Trạng thái</p>
+
+        {/* Stats */}
+        <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:10,marginBottom:16}}>
+          <div className="ws-stat"><div className="ws-stat-label">Tổng minh chứng</div><div className="ws-stat-value">{stats.total}</div></div>
+          <div className="ws-stat"><div className="ws-stat-label">Đang thu thập</div><div className="ws-stat-value" style={{color:'#b45309'}}>{stats.pending}</div></div>
+          <div className="ws-stat"><div className="ws-stat-label">Đã thu thập</div><div className="ws-stat-value" style={{color:'#1e40af'}}>{stats.collected}</div></div>
+          <div className="ws-stat"><div className="ws-stat-label">Đã xác minh</div><div className="ws-stat-value" style={{color:'#15803d'}}>{stats.verified}</div></div>
+        </div>
+
+        {/* Toolbar */}
+        <div className="ev-toolbar">
+          <input type="text" placeholder="🔍 Tìm mã, tên, nguồn…" value={search} onChange={e => setSearch(e.target.value)} style={{flex:'1 1 260px',maxWidth:360}}/>
+          <select value={filterStd} onChange={e => setFilterStd(e.target.value)}>
+            <option value="">Mọi tiêu chuẩn</option>
+            {standards.map(s => <option key={s.id} value={s.id}>TC {s.id}: {s.name.slice(0,40)}</option>)}
+          </select>
+          <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
+            <option value="">Mọi trạng thái</option>
+            <option value="pending">Đang thu thập</option>
+            <option value="collected">Đã thu thập</option>
+            <option value="verified">Đã xác minh</option>
+          </select>
+          <div style={{flex:1}}/>
+          <button className="btn btn-xs" onClick={importFromText} title="Import từ Tư liệu (textarea)"><IRefresh className="w-3.5 h-3.5"/> Import từ text</button>
+          <button className="btn btn-xs" onClick={syncToText} title="Đồng bộ sang Tư liệu để AI dùng"><IRefresh className="w-3.5 h-3.5"/> Đồng bộ AI</button>
+          <button className="btn btn-xs btn-primary" onClick={addNew}><IPlus className="w-3.5 h-3.5"/> Thêm minh chứng</button>
+        </div>
+
+        {/* Table */}
+        {evidence.length === 0 ? (
+          <div className="ev-empty">
+            <div style={{fontSize:36,marginBottom:10}}>📂</div>
+            <div style={{fontSize:14,marginBottom:8}}>Chưa có minh chứng nào</div>
+            <div style={{fontSize:12,marginBottom:16}}>Bấm <b>Import từ text</b> để chuyển danh mục trong Tư liệu sang bảng có cấu trúc, hoặc <b>Thêm minh chứng</b> để nhập mới.</div>
+            <div style={{display:'flex',gap:8,justifyContent:'center'}}>
+              <button className="btn" onClick={importFromText}><IRefresh className="w-4 h-4"/> Import từ Tư liệu</button>
+              <button className="btn btn-primary" onClick={addNew}><IPlus className="w-4 h-4"/> Thêm mới</button>
+            </div>
+          </div>
+        ) : (
+          <table className="ev-table">
+            <thead>
+              <tr>
+                <th style={{width:'10%'}}>Mã</th>
+                <th style={{width:'28%'}}>Tên minh chứng</th>
+                <th style={{width:'8%'}}>TC</th>
+                <th style={{width:'14%'}}>Nguồn</th>
+                <th style={{width:'12%'}}>Người thu thập</th>
+                <th style={{width:'10%'}}>Ngày</th>
+                <th style={{width:'10%'}}>Trạng thái</th>
+                <th style={{width:'8%'}}></th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map(e => (
+                <tr key={e.id} onClick={() => setEditItem(e)} style={{cursor:'pointer'}}>
+                  <td><span className="ev-code">{e.code}</span></td>
+                  <td>{e.title} {e.fileUrl && <a href={e.fileUrl} target="_blank" rel="noopener" onClick={ev => ev.stopPropagation()} title="Mở file"><ILink className="w-3 h-3 inline"/></a>}</td>
+                  <td>{e.standardId}.{e.criterionNum}</td>
+                  <td style={{fontSize:12,color:'var(--ink-muted)'}}>{e.source}</td>
+                  <td style={{fontSize:12,color:'var(--ink-muted)'}}>{e.collectedBy}</td>
+                  <td style={{fontSize:12,color:'var(--ink-muted)'}}>{e.collectedAt}</td>
+                  <td><span className={`ev-status ${e.status}`}>{e.status === 'pending' ? 'Đang thu thập' : e.status === 'collected' ? 'Đã thu thập' : 'Đã xác minh'}</span></td>
+                  <td><button className="btn btn-icon btn-xs btn-ghost" onClick={ev => { ev.stopPropagation(); deleteItem(e.id); }} title="Xoá"><ITrash className="w-3.5 h-3.5"/></button></td>
+                </tr>
+              ))}
+              {filtered.length === 0 && <tr><td colSpan={8} style={{textAlign:'center',padding:30,color:'var(--faint)',fontStyle:'italic'}}>Không có kết quả phù hợp với bộ lọc.</td></tr>}
+            </tbody>
+          </table>
+        )}
+
+        {editItem && <EvidenceEditModal item={editItem} standards={standards} onSave={saveItem} onClose={() => setEditItem(null)}/>}
+      </div>
+    </div>
+  );
+}
+
+function EvidenceEditModal({ item, standards, onSave, onClose }) {
+  const [v, setV] = useState({ ...item });
+  const std = standards.find(s => s.id === v.standardId);
+  const upd = (k, val) => setV(p => ({ ...p, [k]: val }));
+
+  // Auto-format code khi thay đổi standard/criterion
+  useEffect(() => {
+    if (!v.code || /^\[H\d-\d+\.\d+-\d+\]$/.test(v.code)) {
+      // Auto-update if standard matches but criterion different, or empty
+      const existing = (v.code || '').match(/-(\d+)\]$/);
+      const seq = existing ? existing[1] : '01';
+      const newCode = `[H${v.standardId}-${v.standardId}.${v.criterionNum}-${seq}]`;
+      if (newCode !== v.code) upd('code', newCode);
+    }
+  }, [v.standardId, v.criterionNum]);
+
+  return (
+    <div className="overlay fadein" onClick={onClose}>
+      <div className="modal modal-lg" onClick={e => e.stopPropagation()}>
+        <div className="modal-h">
+          <div style={{display:'flex',alignItems:'center',gap:10}}>
+            <IClip className="w-5 h-5"/>
+            <div className="display" style={{fontSize:18,fontWeight:600}}>{item._isNew ? 'Thêm minh chứng' : 'Chỉnh sửa minh chứng'}</div>
+          </div>
+          <button className="btn btn-icon btn-ghost" onClick={onClose}><IX className="w-4 h-4"/></button>
+        </div>
+        <div className="modal-b">
+          <div className="grid2">
+            <div className="field">
+              <label>Tiêu chuẩn <span className="req">*</span></label>
+              <select value={v.standardId} onChange={e => upd('standardId', parseInt(e.target.value))}>
+                {standards.map(s => <option key={s.id} value={s.id}>TC {s.id}: {s.name}</option>)}
+              </select>
+            </div>
+            <div className="field">
+              <label>Tiêu chí <span className="req">*</span></label>
+              <select value={v.criterionNum} onChange={e => upd('criterionNum', parseInt(e.target.value))}>
+                {std?.criteria.map(cr => <option key={cr.num} value={cr.num}>{v.standardId}.{cr.num}: {cr.name.slice(0,50)}</option>)}
+              </select>
+            </div>
+          </div>
+          <div className="field">
+            <label>Mã minh chứng <span style={{color:'var(--faint)',fontWeight:400}}>(tự sinh theo chuẩn [Hx-x.x-xx], có thể sửa)</span></label>
+            <input type="text" value={v.code} onChange={e => upd('code', e.target.value)} placeholder="[H1-1.1-01]" style={{fontFamily:'ui-monospace,monospace'}}/>
+          </div>
+          <div className="field">
+            <label>Tên minh chứng <span className="req">*</span></label>
+            <textarea rows={2} value={v.title} onChange={e => upd('title', e.target.value)} placeholder="VD: Kế hoạch chiến lược phát triển nhà trường giai đoạn 2021-2025"/>
+          </div>
+          <div className="grid2">
+            <div className="field">
+              <label>Nguồn / Nơi lưu trữ</label>
+              <input type="text" value={v.source} onChange={e => upd('source', e.target.value)} placeholder="VD: Tủ hồ sơ HT, kệ số 2"/>
+            </div>
+            <div className="field">
+              <label>File đính kèm (Google Drive link)</label>
+              <input type="text" value={v.fileUrl} onChange={e => upd('fileUrl', e.target.value)} placeholder="https://drive.google.com/..."/>
+            </div>
+          </div>
+          <div className="grid3">
+            <div className="field">
+              <label>Người thu thập</label>
+              <input type="text" value={v.collectedBy} onChange={e => upd('collectedBy', e.target.value)} placeholder="VD: Nguyễn Văn A"/>
+            </div>
+            <div className="field">
+              <label>Ngày thu thập</label>
+              <input type="date" value={v.collectedAt} onChange={e => upd('collectedAt', e.target.value)}/>
+            </div>
+            <div className="field">
+              <label>Trạng thái</label>
+              <select value={v.status} onChange={e => upd('status', e.target.value)}>
+                <option value="pending">Đang thu thập</option>
+                <option value="collected">Đã thu thập</option>
+                <option value="verified">Đã xác minh</option>
+              </select>
+            </div>
+          </div>
+          <div className="field">
+            <label>Ghi chú</label>
+            <textarea rows={3} value={v.note} onChange={e => upd('note', e.target.value)} placeholder="Thông tin bổ sung (nếu có)"/>
+          </div>
+        </div>
+        <div className="modal-f">
+          <button className="btn btn-ghost" onClick={onClose}>Huỷ</button>
+          <button className="btn btn-primary" onClick={() => onSave(v)} disabled={!v.title || !v.code}><ISave className="w-4 h-4"/> Lưu</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ============================================================
+   WORKSPACE: KẾ HOẠCH TỰ ĐÁNH GIÁ (Bước 2 CV 5932)
+   Form điền kế hoạch TĐG + xuất thành văn bản Word riêng.
+============================================================ */
+function PlanWorkspace({ data, setData, showToast }) {
+  const plan = data.plan || {};
+  const workflow = data.workflow || [];
+  const info = data.schoolInfo || {};
+  const upd = (k, val) => setData(d => ({ ...d, plan: { ...(d.plan || {}), [k]: val } }));
+
+  const updTimeline = (stepId, field, val) => {
+    setData(d => ({
+      ...d,
+      workflow: (d.workflow || []).map(s => s.id === stepId ? { ...s, [field]: val } : s)
+    }));
+  };
+
+  const exportPlan = () => {
+    const council = info.council || [];
+    const chair = council.find(m => (m.role || '').toLowerCase().includes('chủ tịch') && !(m.role || '').toLowerCase().includes('phó')) || {};
+    const h = `<!DOCTYPE html>
+<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
+<head><meta charset="utf-8"><meta name="ProgId" content="Word.Document"><title>Kế hoạch TĐG - ${info.name || 'Trường Tiểu học'}</title>
+<!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View></w:WordDocument></xml><![endif]-->
+<style>
+@page WordSection1 { size: 21cm 29.7cm; margin: 2cm 2cm 2cm 3cm; }
+div.WordSection1 { page: WordSection1; }
+body { font-family: 'Times New Roman', serif; font-size: 14pt; line-height: 1.5; }
+h1 { text-align: center; font-size: 16pt; font-weight: bold; margin: 14pt 0; }
+h2 { font-size: 14pt; font-weight: bold; margin: 12pt 0 6pt; }
+p { text-align: justify; text-indent: 1.27cm; margin: 0 0 6pt; }
+p.center { text-align: center; text-indent: 0; }
+p.no-indent { text-indent: 0; }
+table { border-collapse: collapse; width: 100%; margin: 6pt 0; }
+td, th { border: 1pt solid #000; padding: 4pt 6pt; font-size: 13pt; vertical-align: top; }
+th { background: #f1f5f9; font-weight: bold; text-align: center; }
+</style></head><body><div class="WordSection1">`;
+
+    let w = h;
+    w += `<p class="center no-indent" style="font-size:14pt"><b>UBND ${info.ward ? U(info.ward) : '...'}</b></p>`;
+    w += `<p class="center no-indent" style="font-size:15pt"><b>${U(info.name || 'TRƯỜNG ...')}</b></p>`;
+    w += `<p class="center no-indent" style="margin-top:6pt">──────</p>`;
+    w += `<p class="center no-indent" style="margin-top:14pt"><i>Số: ....../KH-${info.name ? info.name.replace(/[^A-Za-zÀ-ỹ]/g,'').slice(0,6) : 'TH'}</i></p>`;
+    w += `<h1 style="margin-top:16pt">KẾ HOẠCH<br/>TỰ ĐÁNH GIÁ KIỂM ĐỊNH CHẤT LƯỢNG GIÁO DỤC<br/>NĂM HỌC ${info.academicYearFrom}-${info.academicYearTo}</h1>`;
+    w += `<p><b>Căn cứ</b> Thông tư số 17/2018/TT-BGDĐT ngày 22/8/2018 của Bộ Giáo dục và Đào tạo ban hành Quy định về kiểm định chất lượng giáo dục và công nhận đạt chuẩn quốc gia đối với trường tiểu học;</p>`;
+    w += `<p><b>Căn cứ</b> Thông tư số 22/2024/TT-BGDĐT ngày 10/12/2024 của Bộ Giáo dục và Đào tạo sửa đổi, bổ sung một số điều của Thông tư 17/2018;</p>`;
+    w += `<p><b>Căn cứ</b> Công văn số 5932/BGDĐT-QLCL ngày 28/12/2018 của Bộ Giáo dục và Đào tạo hướng dẫn tự đánh giá và đánh giá ngoài cơ sở giáo dục phổ thông;</p>`;
+    w += `<p>${(info.name || 'Nhà trường')} xây dựng Kế hoạch tự đánh giá kiểm định chất lượng giáo dục năm học ${info.academicYearFrom}-${info.academicYearTo} với nội dung cụ thể như sau:</p>`;
+
+    w += `<h2>I. MỤC ĐÍCH TỰ ĐÁNH GIÁ</h2><p>${plan.purpose || '[CẦN BỔ SUNG]'}</p>`;
+    w += `<h2>II. PHẠM VI TỰ ĐÁNH GIÁ</h2><p>${plan.scope || '[CẦN BỔ SUNG]'}</p>`;
+    w += `<h2>III. THỜI GIAN THỰC HIỆN</h2><p>Từ ngày ${plan.startDate || '...'} đến ngày ${plan.endDate || '...'}.</p>`;
+    w += `<h2>IV. HỘI ĐỒNG TỰ ĐÁNH GIÁ</h2>`;
+    w += `<table><tr><th style="width:6%">TT</th><th>Họ và tên</th><th>Chức vụ</th><th>Nhiệm vụ trong Hội đồng</th></tr>`;
+    council.forEach((m, i) => {
+      w += `<tr><td style="text-align:center">${i+1}</td><td>${m.name || ''}</td><td>${m.position || ''}</td><td>${m.role || ''}</td></tr>`;
+    });
+    w += `</table>`;
+
+    w += `<h2>V. PHƯƠNG PHÁP, CÔNG CỤ ĐÁNH GIÁ</h2><p>${plan.methodology || '[CẦN BỔ SUNG]'}</p>`;
+
+    w += `<h2>VI. KẾ HOẠCH CHI TIẾT THEO 7 BƯỚC (CV 5932)</h2>`;
+    w += `<table><tr><th style="width:5%">Bước</th><th style="width:38%">Nội dung công việc</th><th style="width:18%">Người phụ trách</th><th style="width:14%">Thời hạn</th><th>Ghi chú</th></tr>`;
+    CV5932_STEPS.forEach(step => {
+      const wf = workflow.find(w => w.id === step.id) || {};
+      w += `<tr><td style="text-align:center">${step.id}</td><td><b>${step.name}</b><br/><i style="font-size:12pt">${step.desc}</i></td><td>${wf.assignee || '...'}</td><td>${wf.deadline || '...'}</td><td>${wf.note || ''}</td></tr>`;
+    });
+    w += `</table>`;
+
+    w += `<h2>VII. KINH PHÍ THỰC HIỆN</h2><p>${plan.budget || '[CẦN BỔ SUNG]'}</p>`;
+    w += `<h2>VIII. NGUỒN LỰC, ĐIỀU KIỆN ĐẢM BẢO</h2><p>${plan.resources || '[CẦN BỔ SUNG]'}</p>`;
+    if (plan.notes) w += `<h2>IX. GHI CHÚ</h2><p>${plan.notes}</p>`;
+
+    w += `<p style="margin-top:18pt"><b>Tổ chức thực hiện:</b> Các thành viên Hội đồng tự đánh giá theo nhiệm vụ được phân công; báo cáo tiến độ hằng tuần với Chủ tịch Hội đồng.</p>`;
+    w += `<p style="margin-top:20pt">Trên đây là Kế hoạch tự đánh giá của ${info.name || 'nhà trường'} năm học ${info.academicYearFrom}-${info.academicYearTo}./.</p>`;
+
+    w += `<table style="border:0;margin-top:22pt"><tr><td style="border:0;width:50%;vertical-align:top;text-align:center"><b>Nơi nhận:</b><br/><i style="font-size:12pt;text-align:left;display:block">- Sở GD&amp;ĐT ${info.province || '...'} (để b/c);<br/>- UBND ${info.ward || 'xã'} (để b/c);<br/>- Hội đồng TĐG (để t/h);<br/>- Lưu: VT.</i></td><td style="border:0;text-align:center;vertical-align:top"><b>HIỆU TRƯỞNG</b><br/>(Ký tên, đóng dấu)<br/><br/><br/><br/><b>${chair.name || info.principal || '...'}</b></td></tr></table>`;
+
+    w += `</div></body></html>`;
+
+    const blob = new Blob([w], { type: 'application/msword' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `KeHoachTDG_${(info.name || 'Truong').replace(/\s+/g,'_')}_${info.academicYearFrom}-${info.academicYearTo}.doc`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('⬇ Đã xuất Kế hoạch TĐG');
+  };
+
+  return (
+    <div className="ws-main">
+      <div className="ws-wrap" style={{maxWidth:920}}>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:14,marginBottom:20}}>
+          <div>
+            <h1 className="ws-title">Kế hoạch tự đánh giá</h1>
+            <p className="ws-subtitle">Bước 2 của quy trình CV 5932 · Xuất thành văn bản Word riêng gửi Sở GD&ĐT và lưu hồ sơ</p>
+          </div>
+          <button className="btn btn-primary" onClick={exportPlan}><IDown className="w-4 h-4"/> Xuất Kế hoạch (.doc)</button>
+        </div>
+
+        <div className="ws-card plan-section">
+          <h3 className="ws-card-h"><IInfo className="w-4 h-4" style={{color:'var(--brand-600)'}}/> Thông tin chung</h3>
+          <div className="plan-field" style={{marginBottom:14}}>
+            <label>I. Mục đích tự đánh giá</label>
+            <textarea value={plan.purpose || ''} onChange={e => upd('purpose', e.target.value)} rows={3}/>
+          </div>
+          <div className="plan-field" style={{marginBottom:14}}>
+            <label>II. Phạm vi tự đánh giá</label>
+            <textarea value={plan.scope || ''} onChange={e => upd('scope', e.target.value)} rows={3}/>
+          </div>
+          <div className="grid2" style={{marginBottom:14}}>
+            <div className="plan-field">
+              <label>III.1. Ngày bắt đầu</label>
+              <input type="date" value={plan.startDate || ''} onChange={e => upd('startDate', e.target.value)}/>
+            </div>
+            <div className="plan-field">
+              <label>III.2. Ngày kết thúc</label>
+              <input type="date" value={plan.endDate || ''} onChange={e => upd('endDate', e.target.value)}/>
+            </div>
+          </div>
+          <div className="plan-field">
+            <label>V. Phương pháp, công cụ đánh giá</label>
+            <textarea value={plan.methodology || ''} onChange={e => upd('methodology', e.target.value)} rows={3}/>
+          </div>
+        </div>
+
+        <div className="ws-card plan-section">
+          <h3 className="ws-card-h"><ITable className="w-4 h-4" style={{color:'var(--brand-600)'}}/> VI. Kế hoạch chi tiết 7 bước CV 5932</h3>
+          <p style={{fontSize:12,color:'var(--ink-muted)',marginBottom:10}}>Chỉnh sửa trực tiếp "Người phụ trách" và "Thời hạn" dưới đây. Thay đổi sẽ đồng bộ với Dashboard.</p>
+          <div className="plan-tl-row">
+            <div>Bước</div><div>Nội dung công việc</div><div>Người phụ trách</div><div>Thời hạn</div><div>Trạng thái</div>
+          </div>
+          {CV5932_STEPS.map(step => {
+            const wf = workflow.find(w => w.id === step.id) || {};
+            return (
+              <div key={step.id} className="plan-tl-row">
+                <div style={{textAlign:'center',fontWeight:600,color:'var(--brand-600)'}}>{step.id}</div>
+                <div style={{fontSize:12.5}}>
+                  <div style={{fontWeight:600,marginBottom:2}}>{step.name}</div>
+                  <div style={{color:'var(--ink-muted)',fontSize:11.5,lineHeight:1.45}}>{step.desc}</div>
+                </div>
+                <input type="text" placeholder="VD: HT, Thư ký" value={wf.assignee || ''} onChange={e => updTimeline(step.id, 'assignee', e.target.value)}/>
+                <input type="date" value={wf.deadline || ''} onChange={e => updTimeline(step.id, 'deadline', e.target.value)}/>
+                <div style={{textAlign:'center'}}>{wf.done ? <span className="ev-status verified">✓ Hoàn thành</span> : <span className="ev-status pending">Đang thực hiện</span>}</div>
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="ws-card plan-section">
+          <h3 className="ws-card-h">💰 Kinh phí & nguồn lực</h3>
+          <div className="plan-field" style={{marginBottom:14}}>
+            <label>VII. Kinh phí thực hiện</label>
+            <textarea value={plan.budget || ''} onChange={e => upd('budget', e.target.value)} rows={2} placeholder="VD: Tổng 5.000.000 đồng; phô-tô tài liệu 1.500.000; văn phòng phẩm 500.000; bồi dưỡng HĐ 3.000.000"/>
+          </div>
+          <div className="plan-field" style={{marginBottom:14}}>
+            <label>VIII. Nguồn lực, điều kiện đảm bảo</label>
+            <textarea value={plan.resources || ''} onChange={e => upd('resources', e.target.value)} rows={2}/>
+          </div>
+          <div className="plan-field">
+            <label>IX. Ghi chú (tuỳ chọn)</label>
+            <textarea value={plan.notes || ''} onChange={e => upd('notes', e.target.value)} rows={2}/>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ============================================================
+   HELP MODAL — Hướng dẫn chi tiết cả hệ thống
+   Modal lớn có sidebar 10 chủ đề + content minh họa bằng mockup.
+============================================================ */
+function HelpModal({ onClose, setWorkspace, setModal }) {
+  const [topic, setTopic] = useState('overview');
+  const topics = [
+    { group: 'Bắt đầu',   id: 'overview', num: '🎯', title: 'Tổng quan Hệ thống' },
+    { group: 'Bắt đầu',   id: 'quickstart', num: '⚡', title: 'Bắt đầu nhanh (5 phút)' },
+    { group: 'Quy trình 7 bước', id: 'school',    num: '1', title: 'Thông tin trường & HĐ' },
+    { group: 'Quy trình 7 bước', id: 'plan',      num: '2', title: 'Kế hoạch TĐG' },
+    { group: 'Quy trình 7 bước', id: 'evidence',  num: '3', title: 'Minh chứng' },
+    { group: 'Quy trình 7 bước', id: 'report',    num: '4-5', title: 'Đánh giá & Báo cáo (AI)' },
+    { group: 'Quy trình 7 bước', id: 'export',    num: '6', title: 'Xuất Word & Công bố' },
+    { group: 'Quy trình 7 bước', id: 'after',     num: '7', title: 'Sau Tự đánh giá' },
+    { group: 'Khác',      id: 'drive',    num: '☁', title: 'Lưu Drive & Cộng tác' },
+    { group: 'Khác',      id: 'faq',      num: '❓', title: 'FAQ & Mẹo' },
+    { group: 'Khác',      id: 'legal',    num: '📜', title: 'Căn cứ pháp lý' }
+  ];
+  const groups = ['Bắt đầu', 'Quy trình 7 bước', 'Khác'];
+
+  return (
+    <div className="overlay fadein" onClick={onClose}>
+      <div className="modal modal-xxl" onClick={e => e.stopPropagation()}>
+        <div className="modal-h">
+          <div style={{display:'flex',alignItems:'center',gap:10}}>
+            <IInfo className="w-5 h-5"/>
+            <div className="display" style={{fontSize:18,fontWeight:600}}>Hướng dẫn sử dụng Hệ thống KĐCLGD</div>
+            <span style={{fontSize:11,color:'var(--faint)',fontStyle:'italic',marginLeft:8}}>v2.1 · {topics.length} chủ đề</span>
+          </div>
+          <button className="btn btn-icon btn-ghost" onClick={onClose}><IX className="w-4 h-4"/></button>
+        </div>
+        <div className="help-body">
+          <div className="help-nav">
+            {groups.map(g => (
+              <div key={g}>
+                <div className="help-nav-section">{g}</div>
+                {topics.filter(t => t.group === g).map(t => (
+                  <div key={t.id} className={`help-nav-item ${topic === t.id ? 'active' : ''}`} onClick={() => setTopic(t.id)}>
+                    <span className="hi-num">{t.num}</span>
+                    <span style={{flex:1}}>{t.title}</span>
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+          <div className="help-content">
+            {topic === 'overview'   && <HelpOverview    onGo={id => setTopic(id)}/>}
+            {topic === 'quickstart' && <HelpQuickstart  setWorkspace={setWorkspace} setModal={setModal} onClose={onClose}/>}
+            {topic === 'school'     && <HelpSchool      setModal={setModal} onClose={onClose}/>}
+            {topic === 'plan'       && <HelpPlan        setWorkspace={setWorkspace} onClose={onClose}/>}
+            {topic === 'evidence'   && <HelpEvidence    setWorkspace={setWorkspace} onClose={onClose}/>}
+            {topic === 'report'     && <HelpReport      setWorkspace={setWorkspace} onClose={onClose}/>}
+            {topic === 'export'     && <HelpExport/>}
+            {topic === 'after'      && <HelpAfter/>}
+            {topic === 'drive'      && <HelpDrive/>}
+            {topic === 'faq'        && <HelpFAQ/>}
+            {topic === 'legal'      && <HelpLegal/>}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ============ HỖ TRỢ: mockup layout ============ */
+function MockTopbar({ activeTab = 'dashboard' }) {
+  return (
+    <div className="mock-topbar">
+      <span style={{fontSize:16}}>📚</span>
+      <div style={{lineHeight:1.1}}>
+        <div style={{fontSize:11,fontWeight:700}}>HỆ THỐNG KĐCLGD</div>
+        <div style={{fontSize:9,opacity:0.7}}>TRƯỜNG TIỂU HỌC</div>
+      </div>
+      <div style={{display:'flex',gap:3,marginLeft:8}}>
+        <span className={`mock-tab ${activeTab==='dashboard'?'active':''}`}>🏠 Tổng quan</span>
+        <span className={`mock-tab ${activeTab==='report'?'active':''}`}>📋 Báo cáo</span>
+        <span className={`mock-tab ${activeTab==='evidence'?'active':''}`}>🗂 Minh chứng</span>
+        <span className={`mock-tab ${activeTab==='plan'?'active':''}`}>📅 Kế hoạch</span>
+      </div>
+      <div style={{flex:1}}/>
+      <span className="mock-pill">🏫 Trường TH Diễn Liên · 2025-2026</span>
+    </div>
+  );
+}
+
+/* ============ Chủ đề 1: Tổng quan ============ */
+function HelpOverview({ onGo }) {
+  return (
+    <div>
+      <h2>🎯 Tổng quan Hệ thống</h2>
+      <div className="help-sub">Hệ thống Kiểm định Chất lượng Giáo dục cho Trường Tiểu học — hỗ trợ toàn bộ quy trình 7 bước theo CV 5932.</div>
+
+      <p><b>Hệ thống KĐCLGD Tiểu học</b> là công cụ toàn diện giúp nhà trường thực hiện <b>tự đánh giá kiểm định chất lượng giáo dục</b> theo Thông tư 17/2018/TT-BGDĐT (sửa đổi bởi TT 22/2024) và Công văn 5932/BGDĐT-QLCL (quy trình 7 bước).</p>
+
+      <h3>🗂 4 không gian làm việc (workspace)</h3>
+      <div className="help-mockup">
+        <div className="help-mockup-label">Thanh tiêu đề hệ thống</div>
+        <MockTopbar activeTab="dashboard"/>
+        <p style={{fontSize:12,color:'var(--ink-muted)',marginTop:8,marginBottom:0}}>4 tab chính ở giữa thanh tiêu đề, click để chuyển không gian làm việc.</p>
+      </div>
+      <ul>
+        <li><b>🏠 Tổng quan</b>: Dashboard 7 bước + Mức đạt, "bước tiếp theo cần làm"</li>
+        <li><b>📋 Báo cáo TĐG</b>: Live preview báo cáo với AI + chỉ báo nguyên văn từng tiêu chí</li>
+        <li><b>🗂 Minh chứng</b>: CRUD danh mục minh chứng có cấu trúc, link Drive, filter</li>
+        <li><b>📅 Kế hoạch TĐG</b>: Form kế hoạch bước 2 + xuất Word riêng</li>
+      </ul>
+
+      <h3>🔁 Quy trình 7 bước CV 5932</h3>
+      <div className="help-flow">
+        <div className="help-flow-box"><b>Bước 1</b>HĐ TĐG</div><span className="help-flow-arrow">→</span>
+        <div className="help-flow-box"><b>Bước 2</b>Kế hoạch</div><span className="help-flow-arrow">→</span>
+        <div className="help-flow-box"><b>Bước 3</b>Minh chứng</div><span className="help-flow-arrow">→</span>
+        <div className="help-flow-box"><b>Bước 4</b>Đánh giá</div><span className="help-flow-arrow">→</span>
+        <div className="help-flow-box"><b>Bước 5</b>Viết BC</div><span className="help-flow-arrow">→</span>
+        <div className="help-flow-box"><b>Bước 6</b>Công bố</div><span className="help-flow-arrow">→</span>
+        <div className="help-flow-box"><b>Bước 7</b>Sau TĐG</div>
+      </div>
+      <p>Mỗi bước tự động nhận diện "đã xong" khi dữ liệu trong hệ thống đầy đủ — không cần tick tay.</p>
+
+      <h3>⭐ Điểm mạnh của hệ thống</h3>
+      <ul>
+        <li><b>AI Gemini 2.5 Pro / Claude 4.7 sinh nội dung</b> tự động toàn bộ 37 mục báo cáo</li>
+        <li><b>Chỉ báo a/b/c NGUYÊN VĂN</b> mã hoá cứng từ TT 17/2018 + TT 22/2024 — AI không được bịa</li>
+        <li><b>Xuất Word chuẩn NĐ 30/2020</b>: TNR 14pt, lề 2/2/2/3cm, MSO-compatible</li>
+        <li><b>Tự động tính Mức đạt</b> từ nội dung "Tự đánh giá" của từng tiêu chí</li>
+        <li><b>Tích hợp Google Drive</b>: lưu báo cáo, đọc folder minh chứng OCR PDF</li>
+        <li><b>Miễn phí, mã nguồn mở</b>, 1 file HTML — không cài đặt gì</li>
+      </ul>
+
+      <h3>📚 Tiêu chuẩn đánh giá</h3>
+      <p>Theo TT 17/2018 (sửa đổi TT 22/2024): <b>5 tiêu chuẩn · 24 tiêu chí · 4 mức đánh giá</b>.</p>
+      <ul>
+        <li><b>TC 1</b>: Tổ chức và quản lý nhà trường (10 tiêu chí)</li>
+        <li><b>TC 2</b>: Cán bộ quản lý, giáo viên, nhân viên và học sinh (4 tiêu chí)</li>
+        <li><b>TC 3</b>: Cơ sở vật chất và thiết bị dạy học (3 tiêu chí — theo TT 22/2024)</li>
+        <li><b>TC 4</b>: Quan hệ giữa nhà trường, gia đình và xã hội (2 tiêu chí)</li>
+        <li><b>TC 5</b>: Hoạt động giáo dục và kết quả giáo dục (5 tiêu chí)</li>
+      </ul>
+
+      <div className="help-note success"><b>👉 Sẵn sàng bắt đầu?</b> Chuyển sang chủ đề <a href="#" onClick={e => { e.preventDefault(); onGo('quickstart'); }}>⚡ Bắt đầu nhanh (5 phút)</a> để thấy các bước cụ thể.</div>
+    </div>
+  );
+}
+
+/* ============ Chủ đề 2: Bắt đầu nhanh ============ */
+function HelpQuickstart({ setWorkspace, setModal, onClose }) {
+  const jump = (ws, md) => { if (ws) setWorkspace(ws); if (md) setModal(md); onClose(); };
+  return (
+    <div>
+      <h2>⚡ Bắt đầu nhanh (5 phút)</h2>
+      <div className="help-sub">Từ lúc mở hệ thống lần đầu đến có báo cáo TĐG hoàn chỉnh.</div>
+
+      <h3>Bước 1: Nhập thông tin trường (~1 phút)</h3>
+      <p>Ở thanh tiêu đề, click vào pill tên trường:</p>
+      <div className="help-mockup">
+        <div className="help-mockup-label">Topbar — chưa nhập tên trường</div>
+        <MockTopbar/>
+        <p style={{fontSize:12,color:'var(--brand-600)',margin:'6px 0 0',fontWeight:500}}>↑ Click pill "🏫 Chưa đặt tên trường" → mở form điền thông tin</p>
+      </div>
+      <p>Điền các field có dấu <span style={{color:'var(--rose)'}}>*</span> (bắt buộc): Tên trường, Hiệu trưởng, Xã/Phường, Tỉnh/Thành. Xem chi tiết ở chủ đề <b>1. Thông tin trường & HĐ</b>.</p>
+      <button className="btn btn-xs btn-primary" onClick={() => jump(null, 'school')}>→ Mở Thông tin trường ngay</button>
+
+      <h3>Bước 2: Chọn tư liệu / minh chứng (~1 phút)</h3>
+      <p>Click nút <span className="help-btn-demo">🗂</span> (Tư liệu) trên topbar. Có 3 vùng:</p>
+      <ul>
+        <li><b>Báo cáo năm trước</b>: Dán nội dung (tuỳ chọn) — AI dùng làm context</li>
+        <li><b>Danh mục minh chứng</b>: Đã nạp sẵn 30+ mã [Hx-x.x-xx]</li>
+        <li><b>Link Google Drive</b>: Thêm folder chứa hồ sơ — AI sẽ đọc OCR</li>
+      </ul>
+
+      <h3>Bước 3: Nhấn "AI toàn bộ" (~10-15 phút chờ)</h3>
+      <p>Vào tab <b>🏠 Tổng quan</b> hoặc <b>📋 Báo cáo TĐG</b>, nhấn nút lớn:</p>
+      <div className="help-mockup">
+        <div className="help-mockup-label">Nút AI tạo toàn bộ báo cáo</div>
+        <div style={{display:'flex',gap:6,alignItems:'center'}}>
+          <span className="mock-btn" style={{background:'var(--brand)',padding:'7px 14px',fontSize:13}}>✨ AI toàn bộ</span>
+          <span style={{fontSize:12,color:'var(--ink-muted)'}}>→ AI sinh 37 mục báo cáo trong 10-15 phút</span>
+        </div>
+      </div>
+      <div className="help-note info">💡 <b>Có thể dừng giữa chừng</b>: đóng tab, lần sau vào, các mục đã sinh vẫn còn, click AI sẽ tiếp tục từ mục chưa xong.</div>
+
+      <h3>Bước 4: Xem & sửa tay (~15-30 phút)</h3>
+      <p>Vào tab <b>📋 Báo cáo TĐG</b>. Center column hiển thị báo cáo đang thành hình:</p>
+      <ul>
+        <li><b>Hover vào 1 mục</b>: Xuất hiện nút <span className="help-btn-demo soft">✨ AI</span> <span className="help-btn-demo" style={{background:'#fff',color:'var(--ink)',border:'1px solid var(--line)'}}>✎ Sửa</span></li>
+        <li><b>Click "AI"</b>: Tạo lại mục đó với AI</li>
+        <li><b>Click "Sửa"</b>: Mở textarea, chỉnh tay, bấm Lưu</li>
+        <li><b>Click 1 tiêu chí ở dàn ý trái</b>: Topbar nút <span className="help-btn-demo">ⓘ Chỉ báo</span> hiện → click để xem a/b/c NGUYÊN VĂN</li>
+      </ul>
+
+      <h3>Bước 5: Xuất Word (~5 giây)</h3>
+      <p>Click nút <span className="help-btn-demo">📤 Xuất</span> trên topbar → tải xuống file <code>BaoCaoTDG_*.doc</code>. Mở bằng Word, in ký duyệt, nộp Sở.</p>
+
+      <div className="help-note success"><b>🎉 Hoàn tất!</b> Bạn đã có báo cáo TĐG đầy đủ 37 mục (Cơ sở dữ liệu, 24 tiêu chí + 5 mở đầu + 5 kết luận TC, Kết luận chung, Đặt vấn đề) chuẩn thể thức NĐ 30/2020.</div>
+    </div>
+  );
+}
+
+/* ============ Chủ đề 3: Thông tin trường & HĐ ============ */
+function HelpSchool({ setModal, onClose }) {
+  return (
+    <div>
+      <h2>🏫 Bước 1: Thông tin trường & Hội đồng TĐG</h2>
+      <div className="help-sub">Thành lập Hội đồng 7-15 thành viên theo CV 5932 + nhập thông tin trường cơ bản.</div>
+
+      <h3>📍 Mở form thông tin trường</h3>
+      <div className="help-mockup">
+        <div className="help-mockup-label">Click pill trên thanh tiêu đề</div>
+        <MockTopbar/>
+        <p style={{fontSize:12,color:'var(--brand-600)',margin:'6px 0 0',fontWeight:500}}>↑ Click pill "🏫 Trường TH Diễn Liên · 2025-2026" (hoặc "Chưa đặt tên trường")</p>
+      </div>
+
+      <h3>📋 Các trường thông tin</h3>
+      <p><b>Bắt buộc</b> (có dấu <span style={{color:'var(--rose)'}}>*</span>): Tên trường, Hiệu trưởng, Xã/Phường, Tỉnh/Thành phố.</p>
+      <p><b>Khuyến nghị đầy đủ</b>:</p>
+      <ul>
+        <li>Tên trường: nhập đầy đủ gồm "Trường". VD: <code>Trường Tiểu học Diễn Liên</code></li>
+        <li>Địa chỉ cụ thể: thôn/xóm/đường (không cần xã vì đã có field riêng)</li>
+        <li>Xã/Phường: VD <code>Xã Quảng Châu</code> — <b>KHÔNG điền huyện</b></li>
+        <li>Mức đánh giá đăng ký: 1 (tối thiểu) · 2 (cấp độ 2) · 3 (chuẩn QG Mức 1) · 4 (chuẩn QG Mức 2)</li>
+        <li>Quy mô: Số lớp, HS, GV, NV năm hiện tại</li>
+        <li>Tick "Vùng khó khăn" nếu trường thuộc xã đặc biệt khó khăn (ảnh hưởng tỷ lệ % của Tiêu chí 2.2 và 5.5)</li>
+      </ul>
+
+      <div className="help-note warn">⚠ <b>Cấu trúc hành chính 2 cấp:</b> Hệ thống chỉ có <b>Xã/Phường</b> và <b>Tỉnh/Thành phố</b>. KHÔNG còn huyện/Phòng GD&ĐT. AI tự lược các cụm này nếu gặp trong báo cáo cũ.</div>
+
+      <h3>👥 Hội đồng Tự đánh giá (13 thành viên mẫu)</h3>
+      <p>Kéo xuống phần "Hội đồng Tự đánh giá" trong cùng form. Đã có sẵn 13 thành viên theo CV 5932:</p>
+
+      <div className="help-mockup">
+        <div className="help-mockup-label">Mẫu Hội đồng — mỗi hàng gồm Họ tên · Chức vụ · Nhiệm vụ</div>
+        {[
+          { n: 1, nv: 'Chủ tịch Hội đồng',      cv: 'Hiệu trưởng' },
+          { n: 2, nv: 'Phó Chủ tịch Hội đồng',  cv: 'Phó Hiệu trưởng' },
+          { n: 3, nv: 'Thư ký Hội đồng',        cv: 'Thư ký HĐ trường' },
+          { n: 4, nv: 'Ủy viên',                cv: 'Chủ tịch Công đoàn' },
+          { n: 5, nv: 'Ủy viên',                cv: 'Bí thư Chi đoàn' },
+          { n: 6, nv: 'Ủy viên',                cv: 'Tổng phụ trách Đội' },
+          { n: 7, nv: 'Ủy viên',                cv: 'Tổ trưởng Tổ khối 1-5' }
+        ].map(r => (
+          <div key={r.n} className="mock-row">
+            <span style={{width:20,textAlign:'center',color:'var(--faint)'}}>{r.n}</span>
+            <span className="mock-input">[Nhập họ tên]</span>
+            <span className="mock-input" style={{minWidth:150}}>{r.cv}</span>
+            <span className="mock-input" style={{minWidth:150}}>{r.nv}</span>
+          </div>
+        ))}
+        <div className="mock-row" style={{color:'var(--faint)'}}>… (thêm thành viên tổ Tiếng Anh, Văn phòng, Nhân viên văn thư)</div>
+      </div>
+
+      <h3>🛠 Thao tác</h3>
+      <ul>
+        <li><b>Sửa trực tiếp</b>: Click vào ô Họ tên, Chức vụ, Nhiệm vụ → gõ → tự lưu</li>
+        <li><b>+ Thêm thành viên</b>: nút phía dưới danh sách</li>
+        <li><b>🗑 Xoá thành viên</b>: icon thùng rác cuối hàng</li>
+        <li><b>🔄 Khôi phục mẫu</b>: nếu đã chỉnh lộn xộn, bấm để reset về 13 thành viên mặc định</li>
+      </ul>
+
+      <div className="help-note info">💡 <b>Danh sách này được in ngay trang 2 của báo cáo Word</b> dưới dạng bảng "Danh sách và chữ ký thành viên Hội đồng tự đánh giá" để hội đồng ký tên đóng dấu.</div>
+
+      <button className="btn btn-primary btn-xs" onClick={() => { setModal('school'); onClose(); }}>→ Mở form Thông tin trường ngay</button>
+    </div>
+  );
+}
+
+/* ============ Chủ đề 4: Kế hoạch TĐG ============ */
+function HelpPlan({ setWorkspace, onClose }) {
+  return (
+    <div>
+      <h2>📅 Bước 2: Lập Kế hoạch Tự đánh giá</h2>
+      <div className="help-sub">Soạn văn bản "Kế hoạch TĐG" ban hành theo trường — xuất Word riêng.</div>
+
+      <h3>🎯 Mục tiêu</h3>
+      <p>Bước 2 của CV 5932 yêu cầu trường <b>ban hành Kế hoạch TĐG</b> gồm: mục đích, phạm vi, thời gian, phân công trách nhiệm, kinh phí, nguồn lực, phương pháp.</p>
+
+      <h3>📍 Cách làm</h3>
+      <div className="help-mockup">
+        <div className="help-mockup-label">Thanh tiêu đề → click tab Kế hoạch</div>
+        <MockTopbar activeTab="plan"/>
+      </div>
+
+      <p>Workspace Kế hoạch có 3 card chính:</p>
+
+      <h4>📋 Card 1: Thông tin chung</h4>
+      <ul>
+        <li><b>I. Mục đích TĐG</b>: đã có nội dung mẫu, chỉnh sửa nếu cần</li>
+        <li><b>II. Phạm vi</b>: đã có nội dung mẫu (5 năm, 5 tiêu chuẩn, 24 tiêu chí)</li>
+        <li><b>III. Ngày bắt đầu - Ngày kết thúc</b>: Chọn ngày</li>
+        <li><b>V. Phương pháp, công cụ</b>: đã có mẫu (nghiên cứu hồ sơ, phỏng vấn, quan sát, phiếu)</li>
+      </ul>
+
+      <h4>📅 Card 2: Kế hoạch chi tiết 7 bước</h4>
+      <div className="help-mockup">
+        <div className="help-mockup-label">Bảng timeline 7 bước — mỗi bước 1 hàng</div>
+        <div style={{display:'grid',gridTemplateColumns:'30px 2fr 1fr 1fr',gap:6,padding:'5px 0',fontSize:11,fontWeight:600,color:'var(--faint)',borderBottom:'1px solid var(--line)'}}>
+          <div>#</div><div>Nội dung</div><div>Người phụ trách</div><div>Thời hạn</div>
+        </div>
+        {CV5932_STEPS.slice(0, 3).map(s => (
+          <div key={s.id} style={{display:'grid',gridTemplateColumns:'30px 2fr 1fr 1fr',gap:6,padding:'5px 0',fontSize:11,borderBottom:'1px dashed var(--line-soft)'}}>
+            <div style={{color:'var(--brand-600)',fontWeight:700,textAlign:'center'}}>{s.id}</div>
+            <div style={{fontSize:11}}>{s.name}</div>
+            <div><span className="mock-input">Hiệu trưởng</span></div>
+            <div><span className="mock-input">01/09/2025</span></div>
+          </div>
+        ))}
+        <div style={{fontSize:11,fontStyle:'italic',color:'var(--faint)',marginTop:6}}>… và 4 bước còn lại</div>
+      </div>
+
+      <div className="help-note info">💡 <b>Đồng bộ real-time với Dashboard</b>: Điền "Người phụ trách" và "Thời hạn" ở đây, Dashboard 7 bước cũng hiện cùng thông tin. Ngược lại.</div>
+
+      <h4>💰 Card 3: Kinh phí & Nguồn lực</h4>
+      <ul>
+        <li><b>VII. Kinh phí</b>: VD "5.000.000 đ (in ấn 1.5tr · VPP 0.5tr · bồi dưỡng HĐ 3tr)"</li>
+        <li><b>VIII. Nguồn lực, điều kiện</b>: mẫu "Ngân sách trường; hỗ trợ UBND xã, Sở GD&ĐT; đóng góp Ban đại diện CMHS"</li>
+        <li><b>IX. Ghi chú</b> (tuỳ chọn)</li>
+      </ul>
+
+      <h3>📤 Xuất file Kế hoạch riêng (.doc)</h3>
+      <p>Nút <span className="help-btn-demo">📤 Xuất Kế hoạch (.doc)</span> góc phải trên → tải xuống file <code>KeHoachTDG_*.doc</code>.</p>
+      <p>File Word xuất ra có đầy đủ:</p>
+      <ul>
+        <li>Quốc hiệu: UBND xã, Trường, số ký hiệu</li>
+        <li>Tiêu đề "KẾ HOẠCH" + "TỰ ĐÁNH GIÁ KIỂM ĐỊNH CHẤT LƯỢNG GIÁO DỤC" + "NĂM HỌC..."</li>
+        <li>3 Căn cứ: TT 17/2018, TT 22/2024, CV 5932</li>
+        <li>9 mục (I → IX) theo dàn ý trên</li>
+        <li>Bảng Hội đồng TĐG (lấy tự động từ Thông tin trường)</li>
+        <li>Bảng 7 bước chi tiết</li>
+        <li>Nơi nhận + chữ ký HT</li>
+      </ul>
+
+      <button className="btn btn-primary btn-xs" onClick={() => { setWorkspace('plan'); onClose(); }}>→ Mở tab Kế hoạch ngay</button>
+    </div>
+  );
+}
+
+/* ============ Chủ đề 5: Minh chứng ============ */
+function HelpEvidence({ setWorkspace, onClose }) {
+  return (
+    <div>
+      <h2>🗂 Bước 3: Quản lý Minh chứng</h2>
+      <div className="help-sub">Danh mục minh chứng có cấu trúc, link file Drive, trạng thái thu thập, filter nhanh.</div>
+
+      <h3>🎯 Mục tiêu</h3>
+      <p>Mã hoá minh chứng theo <b>[Hx-x.x-yy]</b> (H=hộp, x=tiêu chuẩn, x.x=tiêu chí, yy=số thứ tự). Ví dụ <code>[H1-1.1-01]</code> = Hộp 1, Tiêu chí 1.1, Minh chứng số 01.</p>
+
+      <h3>📍 Vào workspace Minh chứng</h3>
+      <div className="help-mockup">
+        <div className="help-mockup-label">Topbar → tab Minh chứng</div>
+        <MockTopbar activeTab="evidence"/>
+      </div>
+
+      <h3>🚀 Cách 1: Import từ Tư liệu (nhanh nhất)</h3>
+      <p>Nếu đã có danh mục dạng text (Tư liệu / evidenceList):</p>
+      <ol>
+        <li>Mở <span className="help-btn-demo">🗂 Tư liệu</span> (topbar) → vùng "Danh mục minh chứng"</li>
+        <li>Dán list mã [Hx-x.x-yy] — mỗi dòng 1 minh chứng</li>
+        <li>Sang tab Minh chứng, click <b>🔄 Import từ text</b></li>
+        <li>Hệ thống tự parse regex <code>[H1-1.1-01]</code>, tạo bảng có cấu trúc</li>
+      </ol>
+
+      <h3>✏ Cách 2: Thêm trực tiếp</h3>
+      <p>Nút <span className="help-btn-demo">+ Thêm minh chứng</span> → mở form:</p>
+      <div className="help-mockup">
+        <div className="help-mockup-label">Form thêm/sửa minh chứng</div>
+        <div className="mock-row"><span style={{width:100,fontSize:11,fontWeight:600}}>Tiêu chuẩn *</span><span className="mock-input">TC 1: Tổ chức và quản lý</span></div>
+        <div className="mock-row"><span style={{width:100,fontSize:11,fontWeight:600}}>Tiêu chí *</span><span className="mock-input">1.1: Phương hướng, chiến lược</span></div>
+        <div className="mock-row"><span style={{width:100,fontSize:11,fontWeight:600}}>Mã MC</span><span className="mock-input" style={{fontFamily:'monospace',color:'var(--brand-600)',fontWeight:600}}>[H1-1.1-01]</span><span style={{fontSize:11,color:'var(--faint)',fontStyle:'italic'}}>Tự sinh khi chọn TC</span></div>
+        <div className="mock-row"><span style={{width:100,fontSize:11,fontWeight:600}}>Tên *</span><span className="mock-input" style={{minWidth:300}}>Kế hoạch chiến lược phát triển 2021-2025</span></div>
+        <div className="mock-row"><span style={{width:100,fontSize:11,fontWeight:600}}>Nguồn</span><span className="mock-input">Tủ HT, kệ 2</span><span style={{width:100,fontSize:11,fontWeight:600,marginLeft:8}}>File Drive</span><span className="mock-input">https://drive...</span></div>
+        <div className="mock-row"><span style={{width:100,fontSize:11,fontWeight:600}}>Người TT</span><span className="mock-input">Nguyễn Văn A</span><span style={{width:100,fontSize:11,fontWeight:600,marginLeft:8}}>Trạng thái</span><span className="mock-input">Đã xác minh</span></div>
+      </div>
+      <p><b>Tự động</b>: Mã [Hx-x.x-yy] được sinh khi chọn Tiêu chuẩn + Tiêu chí, bạn chỉ cần sửa số thứ tự yy.</p>
+
+      <h3>🔍 Filter & Search</h3>
+      <p>Thanh toolbar trên cùng có:</p>
+      <ul>
+        <li><b>Search</b>: tìm theo mã, tên, nguồn (kết hợp AND)</li>
+        <li><b>Select Tiêu chuẩn</b>: lọc theo 1 trong 5 TC</li>
+        <li><b>Select Trạng thái</b>: Đang thu thập / Đã thu thập / Đã xác minh</li>
+      </ul>
+
+      <h3>🎨 Trạng thái màu</h3>
+      <ul>
+        <li><span className="ev-status pending" style={{fontSize:11}}>Đang thu thập</span> — minh chứng chưa có đủ hồ sơ</li>
+        <li><span className="ev-status collected" style={{fontSize:11}}>Đã thu thập</span> — đã có hồ sơ nhưng chưa kiểm tra</li>
+        <li><span className="ev-status verified" style={{fontSize:11}}>Đã xác minh</span> — đã được Thư ký/Phó CT HĐ kiểm tra</li>
+      </ul>
+
+      <h3>🔄 Đồng bộ AI</h3>
+      <div className="help-note info">💡 Sau khi nhập/sửa minh chứng, nhấn nút <span className="help-btn-demo soft">🔄 Đồng bộ AI</span>. Hệ thống sẽ copy bảng → textarea "Danh mục minh chứng" trong Tư liệu. AI sẽ dùng mã [Hx-x.x-yy] này khi sinh báo cáo tiêu chí → dẫn chứng ra đúng mã.</div>
+
+      <button className="btn btn-primary btn-xs" onClick={() => { setWorkspace('evidence'); onClose(); }}>→ Mở tab Minh chứng ngay</button>
+    </div>
+  );
+}
+
+/* ============ Chủ đề 6: Báo cáo AI ============ */
+function HelpReport({ setWorkspace, onClose }) {
+  return (
+    <div>
+      <h2>📋 Bước 4-5: Đánh giá & Viết Báo cáo (AI)</h2>
+      <div className="help-sub">AI Gemini/Claude sinh 37 mục báo cáo theo cấu trúc chuẩn TT 17/2018 + TT 22/2024.</div>
+
+      <h3>🏗 Cấu trúc báo cáo (37 mục AI sinh)</h3>
+      <div className="help-flow" style={{flexDirection:'column',alignItems:'stretch',gap:6}}>
+        <div style={{padding:'6px 10px',background:'#fff',borderRadius:6,border:'1px solid var(--brand)'}}><b>Phần I — Cơ sở dữ liệu</b> (1 mục): Thông tin chung, quy mô 5 năm</div>
+        <div style={{padding:'6px 10px',background:'#fff',borderRadius:6,border:'1px solid var(--brand)'}}><b>Phần II — Tự đánh giá</b> (35 mục)</div>
+        <div style={{padding:'4px 18px',fontSize:11,color:'var(--ink-muted)'}}>├─ A. Đặt vấn đề (1 mục)</div>
+        <div style={{padding:'4px 18px',fontSize:11,color:'var(--ink-muted)'}}>├─ B. Tự đánh giá:</div>
+        <div style={{padding:'4px 30px',fontSize:11,color:'var(--ink-muted)'}}>│  × 5 Tiêu chuẩn × (1 Mở đầu + N tiêu chí + 1 Kết luận) = 34 mục</div>
+        <div style={{padding:'6px 10px',background:'#fff',borderRadius:6,border:'1px solid var(--brand)'}}><b>Phần III — Kết luận chung</b> (1 mục)</div>
+      </div>
+      <p>Tự tính (không cần AI): <b>Bảng tổng hợp kết quả</b> (đầu BC) và <b>Phần IV — Phụ lục</b> (cuối BC).</p>
+
+      <h3>📍 Layout tab Báo cáo TĐG</h3>
+      <div className="help-mockup">
+        <div className="help-mockup-label">3 vùng: dàn ý trái · preview giữa · nút Hướng dẫn phải</div>
+        <div style={{display:'grid',gridTemplateColumns:'110px 1fr',gap:8,fontSize:11}}>
+          <div style={{background:'#0c5da5',padding:8,borderRadius:5,color:'#fff'}}>
+            <div style={{fontWeight:700,marginBottom:4}}>📋 Dàn ý</div>
+            <div className="mock-sidebar">Bảng tổng hợp</div>
+            <div className="mock-sidebar">Phần I. CSDL</div>
+            <div className="mock-sidebar">A. Đặt vấn đề</div>
+            <div className="mock-sidebar active">TC 1.1</div>
+            <div className="mock-sidebar">TC 1.2</div>
+            <div style={{fontSize:9,opacity:0.6,marginTop:4}}>…và 35 mục</div>
+          </div>
+          <div style={{background:'#fff',padding:10,borderRadius:5,border:'1px solid var(--line)',fontSize:11,lineHeight:1.5}}>
+            <div style={{fontWeight:700,fontSize:14,fontFamily:'Times New Roman,serif',marginBottom:4}}>Tiêu chí 1.1: Phương hướng, chiến lược…</div>
+            <div style={{fontSize:11,color:'var(--brand-600)',marginBottom:4}}>TC 1</div>
+            <div style={{color:'var(--faint)',fontStyle:'italic'}}>Chưa có nội dung. Click <b>✨ AI</b> để tạo…</div>
+          </div>
+        </div>
+      </div>
+
+      <h3>🚀 Cách 1: AI toàn bộ (khuyến nghị cho lần đầu)</h3>
+      <p>Nút <span className="help-btn-demo">✨ AI toàn bộ</span> trên topbar → AI sinh 37 mục trong <b>10-15 phút</b>. Tab có thể đóng, lần sau mở lại sẽ tiếp tục.</p>
+
+      <h3>🎯 Cách 2: Tạo từng mục</h3>
+      <p>Di chuột vào 1 mục trong preview giữa → hiện 2 nút ở góc phải:</p>
+      <ul>
+        <li><span className="help-btn-demo soft">✨ AI</span>: AI sinh lại mục này</li>
+        <li><span className="help-btn-demo" style={{background:'#fff',color:'var(--ink)',border:'1px solid var(--line)'}}>✎ Sửa</span>: Mở textarea chỉnh tay</li>
+      </ul>
+
+      <h3>📖 Xem chỉ báo NGUYÊN VĂN (quan trọng!)</h3>
+      <p>Điểm mạnh nhất của hệ thống: chỉ báo a/b/c của từng Mức 1/2/3/4 được mã hoá cứng từ TT 17/2018 + TT 22/2024.</p>
+      <ol>
+        <li>Click 1 tiêu chí trong dàn ý trái (VD: TC 1.1)</li>
+        <li>Nút topbar đổi thành <span className="help-btn-demo" style={{background:'rgba(255,255,255,0.2)',color:'#fff'}}>ⓘ Chỉ báo 1.1</span></li>
+        <li>Click → mở modal với tabs Mức 1 / Mức 2 / Mức 3 / Mức 4</li>
+        <li>Đọc chỉ báo a/b/c NGUYÊN VĂN để đối chiếu với thực tế trường</li>
+      </ol>
+
+      <div className="help-note success"><b>💡 AI không được bịa chỉ báo</b>: Khi sinh nội dung tiêu chí, hệ thống truyền NGUYÊN VĂN các chỉ báo a/b/c cho AI. AI bắt buộc đối chiếu — không tự thêm/bớt. Đây là lý do báo cáo TDG-TH chính xác hơn đối thủ.</div>
+
+      <h3>📊 Cấu trúc nội dung 1 tiêu chí (AI tuân thủ)</h3>
+      <ol>
+        <li><b>Liệt kê chỉ báo</b> từng Mức (nguyên văn)</li>
+        <li><b>Mô tả hiện trạng</b>: đối chiếu từng chỉ báo a/b/c với thực tế trường + mã minh chứng [Hx-x.x-yy]</li>
+        <li><b>Điểm mạnh</b>: 2-3 điểm nổi bật có dẫn chứng</li>
+        <li><b>Điểm yếu</b>: 1-2 điểm trung thực + nguyên nhân</li>
+        <li><b>Kế hoạch cải tiến</b>: biện pháp · người thực hiện · thời gian · kinh phí</li>
+        <li><b>Tự đánh giá</b>: "Tiêu chí X.Y ĐẠT Mức Z / KHÔNG ĐẠT"</li>
+      </ol>
+
+      <div className="help-note info">🎯 <b>Sau khi AI viết xong</b>: Dashboard tự đọc phần "Tự đánh giá" → tính Mức đạt của từng TC → tính Mức chung của trường. Không cần tick tay.</div>
+
+      <button className="btn btn-primary btn-xs" onClick={() => { setWorkspace('report'); onClose(); }}>→ Mở tab Báo cáo TĐG ngay</button>
+    </div>
+  );
+}
+
+/* ============ Chủ đề 7: Xuất Word ============ */
+function HelpExport() {
+  return (
+    <div>
+      <h2>📤 Bước 6: Xuất Word & Công bố</h2>
+      <div className="help-sub">Tải file .doc chuẩn NĐ 30/2020, in ký duyệt, gửi cơ quan cấp trên.</div>
+
+      <h3>🔘 Nút Xuất</h3>
+      <p>Trên topbar (ở mọi workspace), nút <span className="help-btn-demo">📤 Xuất</span> luôn hiển thị.</p>
+      <p>Click → browser tải xuống file <code>BaoCaoTDG_TH_&lt;TenTruong&gt;_&lt;NamHoc&gt;.doc</code> (~50-200 KB tuỳ nội dung).</p>
+
+      <h3>📑 Cấu trúc file Word</h3>
+      <div className="help-flow" style={{flexDirection:'column',alignItems:'stretch',gap:5}}>
+        <div style={{padding:'5px 10px',background:'#fff',borderRadius:5,border:'1px solid var(--brand)',fontSize:12}}><b>Trang 1</b> — Trang bìa: UBND Xã · TRƯỜNG · BÁO CÁO TỰ ĐÁNH GIÁ · (KĐCLGD cấp Tiểu học) · TỈNH, NĂM</div>
+        <div style={{padding:'5px 10px',background:'#fff',borderRadius:5,border:'1px solid var(--brand)',fontSize:12}}><b>Trang 2</b> — Danh sách Hội đồng TĐG (bảng 13+ thành viên để ký tên)</div>
+        <div style={{padding:'5px 10px',background:'#fff',borderRadius:5,border:'1px solid var(--brand)',fontSize:12}}><b>Trang 3</b> — Mục lục</div>
+        <div style={{padding:'5px 10px',background:'#fff',borderRadius:5,border:'1px solid var(--brand)',fontSize:12}}><b>Trang 4+</b> — Bảng tổng hợp kết quả (tự tính: 5 TC × 4 Mức)</div>
+        <div style={{padding:'5px 10px',background:'#fff',borderRadius:5,border:'1px solid var(--brand)',fontSize:12}}><b>Phần I</b> — Cơ sở dữ liệu (thông tin trường + quy mô 5 năm)</div>
+        <div style={{padding:'5px 10px',background:'#fff',borderRadius:5,border:'1px solid var(--brand)',fontSize:12}}><b>Phần II</b> — Tự đánh giá (A. Đặt vấn đề + B. 5 TC × (Mở đầu + TC + Kết luận TC))</div>
+        <div style={{padding:'5px 10px',background:'#fff',borderRadius:5,border:'1px solid var(--brand)',fontSize:12}}><b>Phần III</b> — Kết luận chung</div>
+        <div style={{padding:'5px 10px',background:'#fff',borderRadius:5,border:'1px solid var(--brand)',fontSize:12}}><b>Phần IV</b> — Phụ lục: Danh mục minh chứng + Bảng mã hoá</div>
+      </div>
+
+      <h3>📐 Thể thức theo NĐ 30/2020/NĐ-CP</h3>
+      <ul>
+        <li><b>Khổ giấy</b>: A4 (21 × 29.7 cm)</li>
+        <li><b>Lề</b>: Trên 2cm, Dưới 2cm, Trái 3cm, Phải 2cm</li>
+        <li><b>Font</b>: Times New Roman</li>
+        <li><b>Cỡ chữ</b>: 14pt (thân bài) · 14-16pt (tiêu đề) · 22pt (BÁO CÁO TỰ ĐÁNH GIÁ)</li>
+        <li><b>Dòng</b>: 1.5 lines</li>
+        <li><b>Căn lề</b>: Justify (đều 2 bên) · Thụt đầu dòng 1.27cm</li>
+        <li><b>Bullet</b>: Dấu "-" thay vì ●</li>
+      </ul>
+
+      <div className="help-note info"><b>💡 MSO-compatible</b>: File dùng XML namespace <code>xmlns:w="urn:schemas-microsoft-com:office:word"</code> + CSS <code>@page WordSection1</code> nên Word tôn trọng margin thật sự (không dùng default 2.54/3.17).</div>
+
+      <h3>🖨 Công bố báo cáo (Bước 6 CV 5932)</h3>
+      <ol>
+        <li><b>In bản giấy</b>: Mở file .doc trong Word → Ctrl+P → in. Hiệu trưởng ký + đóng dấu.</li>
+        <li><b>Niêm yết tại trường</b>: Đặt 1 bản ở bảng tin nhà trường ít nhất 20 ngày.</li>
+        <li><b>Đăng trên website</b>: Upload file PDF lên trang trường.</li>
+        <li><b>Gửi cơ quan quản lý</b>: UBND xã (1 bản) + Sở GD&ĐT (1 bản) qua đường công văn.</li>
+      </ol>
+
+      <h3>🔄 Xuất lại file Kế hoạch (Bước 2)</h3>
+      <p>Trong tab <b>📅 Kế hoạch</b> có nút riêng <span className="help-btn-demo">📤 Xuất Kế hoạch (.doc)</span> → tải file <code>KeHoachTDG_*.doc</code> riêng (chỉ KH, không bao gồm báo cáo).</p>
+
+      <div className="help-note warn">⚠ <b>Sửa trong Word</b>: Có thể mở file xuất ra, tinh chỉnh thêm. Nhưng lần sau "Xuất" lại sẽ ghi đè — nhớ đổi tên bản đã sửa.</div>
+    </div>
+  );
+}
+
+/* ============ Chủ đề 8: Sau TĐG ============ */
+function HelpAfter() {
+  return (
+    <div>
+      <h2>🚀 Bước 7: Triển khai sau Tự đánh giá</h2>
+      <div className="help-sub">Cải tiến chất lượng theo kế hoạch, đăng ký đánh giá ngoài, duy trì &amp; nâng cao.</div>
+
+      <h3>📋 Nội dung Bước 7 theo CV 5932</h3>
+      <ol>
+        <li><b>Thực hiện kế hoạch cải tiến chất lượng</b> đã đề ra trong báo cáo TĐG (mỗi tiêu chí có mục "4. Kế hoạch cải tiến chất lượng")</li>
+        <li><b>Đăng ký đánh giá ngoài</b> (nếu đã đạt KĐCLGD Mức 1-3 sau tự đánh giá)</li>
+        <li><b>Duy trì và nâng cao chất lượng</b> các hoạt động giáo dục</li>
+      </ol>
+
+      <h3>📊 Trên Dashboard</h3>
+      <p>Bước 7 là bước duy nhất cần <b>tick thủ công</b> (không auto-detect từ data).</p>
+      <div className="help-mockup">
+        <div className="help-mockup-label">Dashboard → Card 7 bước → Bước 7</div>
+        <div className="wf-step pending" style={{gridTemplateColumns:'auto 1fr auto',padding:'10px 12px'}}>
+          <div className="wf-num">7</div>
+          <div className="wf-body">
+            <div className="wf-name" style={{fontSize:13}}>Triển khai các hoạt động sau tự đánh giá</div>
+            <div className="wf-desc" style={{fontSize:11}}>Thực hiện kế hoạch cải tiến; đăng ký đánh giá ngoài; duy trì chất lượng.</div>
+          </div>
+          <div className="wf-actions">
+            <button className="btn btn-xs btn-soft">✓ Đánh dấu xong</button>
+          </div>
+        </div>
+      </div>
+
+      <h3>📝 Tổng hợp Kế hoạch cải tiến từ báo cáo</h3>
+      <p>Mỗi tiêu chí trong báo cáo TĐG có phần <b>"4. Kế hoạch cải tiến chất lượng"</b> do AI sinh ra với format: biện pháp · người thực hiện · thời gian · kinh phí.</p>
+      <p>Gợi ý: In riêng các phần "4. Kế hoạch cải tiến" + tổng hợp thành <b>Ma trận cải tiến</b> (tính năng này đang trong backlog — sẽ bổ sung).</p>
+
+      <h3>🎯 Đăng ký đánh giá ngoài</h3>
+      <div className="help-note info">💡 Trường đạt <b>Mức 1-3</b> sau tự đánh giá có thể đăng ký <b>đánh giá ngoài</b> với Sở GD&ĐT. Nếu được công nhận, trường đạt:
+        <ul style={{margin:'6px 0 0'}}>
+          <li>Mức 1 → Chứng nhận KĐCLGD Mức 1</li>
+          <li>Mức 2 → Chứng nhận KĐCLGD Mức 2</li>
+          <li>Mức 3 → KĐCLGD Mức 3 + có thể xét <b>Chuẩn Quốc gia Mức 1</b></li>
+          <li>Mức 4 → Chuẩn Quốc gia Mức 2 (cao nhất)</li>
+        </ul>
+      </div>
+
+      <h3>📅 Chu kỳ đánh giá</h3>
+      <ul>
+        <li>Chu kỳ KĐCLGD và công nhận chuẩn QG: <b>05 năm</b></li>
+        <li>Được công nhận theo quy định tại khoản 2 Điều 34, sau ít nhất <b>02 năm</b> kể từ ngày công nhận, có thể đăng ký đánh giá ngoài ở cấp độ cao hơn</li>
+        <li>Trường công nhận Mức 1, sau 02 năm có thể đăng ký Mức 2</li>
+      </ul>
+    </div>
+  );
+}
+
+/* ============ Chủ đề 9: Drive ============ */
+function HelpDrive() {
+  return (
+    <div>
+      <h2>☁ Lưu Google Drive & Cộng tác</h2>
+      <div className="help-sub">Sao lưu báo cáo, tránh mất dữ liệu, chia sẻ với đồng nghiệp.</div>
+
+      <h3>💾 Lưu tự động vs Lưu Drive</h3>
+      <ul>
+        <li><b>Tự lưu máy</b>: Sau mỗi thay đổi 800ms, hệ thống lưu localStorage trình duyệt. Không cần làm gì.</li>
+        <li><b>Lưu Drive</b>: Phải click nút — lưu lên Google Drive cá nhân của admin hệ thống (đã cấu hình sẵn).</li>
+      </ul>
+
+      <div className="help-note warn">⚠ <b>Tự lưu máy CHỈ lưu trên trình duyệt này</b>. Đổi máy, xoá cache, dùng ẩn danh → mất. Nên Lưu Drive ít nhất 1 lần sau khi nhập xong thông tin trường.</div>
+
+      <h3>☁ Lưu lên Drive</h3>
+      <p>Nút <span className="help-btn-demo">☁↑</span> trên topbar → báo cáo được lưu lên Drive với ID tự sinh <code>TDGTH_&lt;TênTrường&gt;_&lt;NăM&gt;_xxx</code>.</p>
+      <p>Lần đầu lưu có thể mất 3-5s. Lưu ý:</p>
+      <ul>
+        <li>Phải nhập <b>Tên trường</b> trước khi lưu (để sinh ID)</li>
+        <li>Lưu đè: cùng Tên + Năm → cùng file, ghi đè (không tạo bản mới)</li>
+        <li>Lưu nhiều năm khác nhau → nhiều file riêng biệt</li>
+      </ul>
+
+      <h3>📥 Mở báo cáo đã lưu</h3>
+      <p>Nút <span className="help-btn-demo">📋</span> trên topbar (cạnh nút ☁↑) → mở danh sách báo cáo đã lưu.</p>
+      <div className="help-mockup">
+        <div className="help-mockup-label">Modal "Báo cáo trên Google Drive"</div>
+        <div style={{padding:8,border:'1px solid var(--line)',borderRadius:6,marginBottom:6,fontSize:11}}>
+          <div style={{fontWeight:600}}>Trường TH Diễn Liên · <span style={{color:'var(--brand-600)'}}>2025-2026</span></div>
+          <div style={{color:'var(--faint)',fontSize:10}}>Tiểu học · Nghệ An · HT: Nguyễn Văn A · 28 mục · Cập nhật: 19/04/2026 14:30</div>
+          <div style={{marginTop:4}}><span className="mock-btn soft">☁↓ Mở</span> <span className="mock-btn" style={{background:'transparent',color:'var(--faint)',border:'1px solid var(--line)'}}>🗑 Xoá</span></div>
+        </div>
+      </div>
+
+      <h3>👥 Cộng tác với đồng nghiệp</h3>
+      <p>Hiện tại hệ thống là single-user (1 người dùng 1 lúc). Cách cộng tác:</p>
+      <ol>
+        <li><b>Chung 1 máy</b>: Luân phiên mở app, dữ liệu tự lưu localStorage</li>
+        <li><b>Qua Drive</b>: 1 người soạn → Lưu Drive → gửi Report ID cho người khác → họ mở bằng <b>📋</b> → tải về, chỉnh tiếp → Lưu Drive lại</li>
+        <li><b>Backup định kỳ</b>: Mỗi cuối phiên, Lưu Drive + Xuất Word để có 2 bản dự phòng</li>
+      </ol>
+
+      <div className="help-note info">💡 <b>Backlog</b>: Đa người dùng real-time với phân quyền (Chủ tịch / Thư ký / Ủy viên) cần backend riêng — đang lên kế hoạch phát triển.</div>
+    </div>
+  );
+}
+
+/* ============ Chủ đề 10: FAQ ============ */
+function HelpFAQ() {
+  const faqs = [
+    { q: 'Cần cài phần mềm gì không?', a: 'Không. Chỉ cần <b>trình duyệt web</b> (Chrome, Edge, Firefox, Safari, Cốc Cốc…). Không cần Microsoft Office (vẫn xuất được file .doc). Không cần tài khoản đăng nhập.' },
+    { q: 'Dữ liệu của tôi lưu ở đâu?', a: 'Mặc định lưu <b>localStorage trình duyệt</b> trên máy bạn — tự động sau mỗi thay đổi 800ms. Khi bấm <b>☁ Lưu Drive</b>, bản sao được lưu lên Google Drive cá nhân của admin. Xuất .doc thì file ở thư mục Downloads máy bạn.' },
+    { q: 'AI có miễn phí không?', a: 'API key Gemini được admin cấu hình sẵn trong code. Google Gemini có <b>free tier 1500 requests/ngày</b> — đủ để 5-10 trường dùng/ngày. Nếu vượt, có thể dùng Claude API (~$3/1M tokens, chi phí cỡ 10-20k cho 1 báo cáo đầy đủ).' },
+    { q: 'AI có bịa đặt thông tin không?', a: '<b>Không</b>. Chỉ báo a/b/c/Mức 1-4 được truyền NGUYÊN VĂN từ TT 17/2018 + TT 22/2024 vào prompt. AI bắt buộc đối chiếu, không được tự thêm. Số liệu thiếu → AI đánh dấu <code>[CẦN BỔ SUNG]</code> để user điền tay.' },
+    { q: 'Báo cáo có đúng thể thức NĐ 30/2020 không?', a: 'Có. Lề 2/2/2/3cm, Times New Roman 14pt, line-height 1.5, justify, thụt đầu dòng 1.27cm, dấu "-" không dùng bullet ●. Dùng MSO-specific CSS để ép Word tôn trọng (không dùng default 2.54/3.17).' },
+    { q: 'Tôi đã nhập Huyện, có được không?', a: '<b>Không khuyến khích</b>. Theo cấu trúc hành chính VN sau sáp nhập 2 cấp, chỉ còn <b>Xã/Phường + Tỉnh/Thành</b>. Không có Huyện, không có Phòng GD&ĐT. Trong báo cáo mới, các cụm này cần được thay bằng UBND xã/Sở GD&ĐT.' },
+    { q: 'Tôi muốn dừng AI giữa chừng?', a: 'Đóng tab trình duyệt. Các mục đã xong vẫn lưu localStorage. Lần sau mở lại, bấm "AI toàn bộ" sẽ skip các mục đã "done", chỉ tạo mục chưa xong.' },
+    { q: 'Sửa xong nội dung tiêu chí, Dashboard không update?', a: 'Dashboard đọc nội dung "5. Tự đánh giá" bằng regex "Đạt Mức X" hoặc "Không đạt". Đảm bảo dòng cuối tiêu chí có format <code>Tiêu chí X.Y ĐẠT Mức Z.</code> Refresh tab Tổng quan sau khi sửa.' },
+    { q: 'Có thể sửa chỉ báo a/b/c không?', a: '<b>Không</b>. Chỉ báo là NGUYÊN VĂN từ Thông tư, mã hoá cứng trong code. Chỉnh sửa = vi phạm pháp luật. Nếu Thông tư sửa đổi trong tương lai, code phải được cập nhật đồng bộ.' },
+    { q: 'In báo cáo thiếu bảng/sai định dạng?', a: 'Mở file .doc trong <b>Microsoft Word</b> (bản 2013+) hoặc <b>LibreOffice</b>. Google Docs đôi khi không hiển thị đúng CSS @page và MSO-specific properties. Nếu dùng Google Docs, xuất thủ công sang Word.' },
+    { q: 'Tôi không thấy nút "Hướng dẫn" nữa?', a: 'Nút đổi tên thành <b>"Chỉ báo X.Y"</b> khi bạn đang click vào 1 tiêu chí ở dàn ý. Click đi chỗ khác (coso / ketluan / dashboard) thì nút về lại "Hướng dẫn".' },
+    { q: 'Trường tôi có 2 cấp (MN + TH), dùng chung được không?', a: 'Hiện tại mỗi cấp dùng file HTML riêng: TDG-TH.html cho Tiểu học, TDG-MN.html cho Mầm non. Backend Apps Script chung nên lưu Drive không xung đột (ID khác prefix).' }
+  ];
+  return (
+    <div>
+      <h2>❓ FAQ &amp; Mẹo sử dụng</h2>
+      <div className="help-sub">12 câu hỏi thường gặp từ người dùng thực tế.</div>
+      {faqs.map((f, i) => (
+        <div key={i} className="help-qa">
+          <div className="help-qa-q">❔ {f.q}</div>
+          <div className="help-qa-a" dangerouslySetInnerHTML={{__html: f.a}}/>
+        </div>
+      ))}
+
+      <h3>⚡ Phím tắt (cho soạn thảo)</h3>
+      <ul>
+        <li><kbd>Ctrl</kbd> + <kbd>A</kbd>: Chọn toàn bộ text trong textarea</li>
+        <li><kbd>Ctrl</kbd> + <kbd>F</kbd>: Tìm trong trang (browser native)</li>
+        <li><kbd>F5</kbd>: Reload (dữ liệu không mất vì đã lưu localStorage)</li>
+        <li><kbd>Ctrl</kbd> + <kbd>P</kbd>: In trực tiếp từ trang</li>
+      </ul>
+
+      <h3>💡 Mẹo tiết kiệm thời gian</h3>
+      <ul>
+        <li><b>Điền thông tin trường + HĐ TĐG TRƯỚC</b> khi AI tạo. AI dùng thông tin này làm context, ra nội dung sát thực tế hơn.</li>
+        <li><b>Dán báo cáo năm trước vào Tư liệu</b>. AI sẽ tham khảo, không phải bịa số liệu.</li>
+        <li><b>Thêm link Drive folder minh chứng</b>. AI đọc được Google Docs, Sheets, PDF (OCR). Nội dung bám sát hồ sơ thật.</li>
+        <li><b>AI từng phần nếu máy yếu</b>. Thay vì "AI toàn bộ" chạy liền 10-15 phút, có thể hover + click AI từng mục cách nhau.</li>
+        <li><b>Lưu Drive sau khi xong mỗi tiêu chuẩn</b>. Tránh mất do sự cố.</li>
+      </ul>
+    </div>
+  );
+}
+
+/* ============ Chủ đề 11: Căn cứ pháp lý ============ */
+function HelpLegal() {
+  return (
+    <div>
+      <h2>📜 Căn cứ pháp lý</h2>
+      <div className="help-sub">Các văn bản quy phạm pháp luật mà hệ thống bám sát 100%.</div>
+
+      <h3>Về kiểm định chất lượng giáo dục</h3>
+      <div className="help-doc-card">
+        <div className="help-doc-title">Thông tư 17/2018/TT-BGDĐT</div>
+        <div className="help-doc-desc">Ban hành ngày <b>22/8/2018</b> · Hiệu lực từ 10/10/2018. Quy định về kiểm định chất lượng giáo dục và công nhận đạt chuẩn quốc gia đối với trường tiểu học. <b>5 tiêu chuẩn · 27 tiêu chí · 4 mức</b> (Mức 1 tối thiểu → Mức 4 Chuẩn QG Mức 2).</div>
+      </div>
+      <div className="help-doc-card">
+        <div className="help-doc-title">Thông tư 22/2024/TT-BGDĐT <span style={{background:'var(--brand)',color:'#fff',padding:'1px 7px',borderRadius:4,fontSize:10,marginLeft:6}}>MỚI NHẤT</span></div>
+        <div className="help-doc-desc">Ban hành ngày <b>10/12/2024</b> · Hiệu lực từ <b>25/01/2025</b>. <b>Sửa đổi</b> TT 17/2018 (Tiểu học), TT 18/2018 (THCS/THPT), TT 19/2018 (Mầm non). Nội dung chính:
+          <ul style={{margin:'6px 0 0'}}>
+            <li>Điều 9 viết lại: Tiêu chuẩn 3 từ 6 → <b>3 tiêu chí</b> (3.1 Địa điểm-quy mô-diện tích, 3.2 Các hạng mục công trình, 3.3 Hạ tầng KT &amp; thiết bị)</li>
+            <li>Tiêu chí 1.2 đổi tên: "Hội đồng trường và các hội đồng khác"</li>
+            <li>Tiêu chí 5.1 đổi tên: "Kế hoạch giáo dục của nhà trường"</li>
+            <li>Tiêu chí 5.5 Mức 1 chỉnh chỉ báo</li>
+            <li>Điều 22 bổ sung khoản 6, 7 cho Mức 4</li>
+          </ul>
+          → Tổng sau sửa: 5 TC · <b>24 tiêu chí</b> · 4 Mức.
+        </div>
+      </div>
+      <div className="help-doc-card">
+        <div className="help-doc-title">Công văn 5932/BGDĐT-QLCL</div>
+        <div className="help-doc-desc">Ban hành ngày <b>28/12/2018</b>. Hướng dẫn <b>tự đánh giá và đánh giá ngoài</b> cơ sở giáo dục phổ thông (tiểu học, THCS, THPT). Quy định <b>quy trình 7 bước</b> mà hệ thống triển khai trong tab Tổng quan.</div>
+      </div>
+
+      <h3>Về cơ sở vật chất</h3>
+      <div className="help-doc-card">
+        <div className="help-doc-title">Thông tư 13/2020/TT-BGDĐT</div>
+        <div className="help-doc-desc">Ban hành ngày <b>26/5/2020</b>. Quy định <b>tiêu chuẩn cơ sở vật chất</b> trường mầm non, tiểu học, THCS, THPT và trường phổ thông có nhiều cấp học. Là căn cứ cho Tiêu chuẩn 3 của báo cáo TĐG.</div>
+      </div>
+      <div className="help-doc-card">
+        <div className="help-doc-title">Thông tư 23/2024/TT-BGDĐT <span style={{background:'var(--brand)',color:'#fff',padding:'1px 7px',borderRadius:4,fontSize:10,marginLeft:6}}>MỚI NHẤT</span></div>
+        <div className="help-doc-desc">Ban hành cùng ngày 10/12/2024. <b>Sửa đổi</b> TT 13/2020 — cập nhật tiêu chuẩn CSVC cho phù hợp.</div>
+      </div>
+
+      <h3>Về thể thức văn bản</h3>
+      <div className="help-doc-card">
+        <div className="help-doc-title">Nghị định 30/2020/NĐ-CP</div>
+        <div className="help-doc-desc">Ban hành ngày <b>05/3/2020</b>. Quy định về <b>công tác văn thư</b>. Hệ thống tuân thủ thể thức:
+          <ul style={{margin:'6px 0 0'}}>
+            <li>Khổ giấy A4, lề trên/dưới 20mm, trái 30mm, phải 20mm</li>
+            <li>Font Times New Roman Unicode, cỡ 13-14pt thân bài</li>
+            <li>Dòng 1.5 lines, căn đều hai bên, thụt đầu đoạn 1.27cm</li>
+            <li>Quốc hiệu, tiêu ngữ, địa danh, ngày tháng</li>
+          </ul>
+        </div>
+      </div>
+
+      <h3>Văn bản cũ (bối cảnh lịch sử)</h3>
+      <div className="help-doc-card">
+        <div className="help-doc-title">TT 42/2012/TT-BGDĐT và TT 59/2012/TT-BGDĐT (đã bãi bỏ)</div>
+        <div className="help-doc-desc">Quy định cũ về KĐCLGD trường tiểu học. <b>Bị thay thế bởi TT 17/2018</b> — không dùng nữa. Nếu báo cáo cũ của trường còn dùng tên/số này, hệ thống sẽ cập nhật sang chuẩn mới khi AI sinh báo cáo.</div>
+      </div>
+
+      <h3>Link tra cứu</h3>
+      <ul>
+        <li><b>thuvienphapluat.vn</b> — tra toàn văn thông tư</li>
+        <li><b>vbpl.vn</b> — cổng văn bản pháp luật chính phủ</li>
+        <li><b>moet.gov.vn</b> — Bộ Giáo dục và Đào tạo</li>
+        <li><b>vqa.moet.gov.vn</b> — Cục Quản lý chất lượng (KĐCLGD)</li>
+      </ul>
+
+      <div className="help-note info">💡 <b>Hệ thống cập nhật đồng bộ</b>: Khi Bộ ban hành thông tư mới, mã nguồn sẽ được cập nhật và thông báo trong mục này. Hiện tại (2026-04): bám TT 17/2018 + TT 22/2024 + CV 5932 là mới nhất.</div>
     </div>
   );
 }
