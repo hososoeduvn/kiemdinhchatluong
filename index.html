@@ -921,13 +921,14 @@ const CV5932_STEPS = [
   { id: 7, name: 'Triển khai các hoạt động sau tự đánh giá', desc: 'Thực hiện kế hoạch cải tiến chất lượng đã đề ra trong báo cáo; đăng ký đánh giá ngoài; duy trì và nâng cao chất lượng.' }
 ];
 
-/* Mẫu Hội đồng TĐG chuẩn theo Công văn 5932/BGDĐT-QLCL + thực tế trường TH
-   User có thể thêm/bớt thành viên trong SchoolInfoModal. */
+/* Mẫu Hội đồng TĐG chuẩn theo Công văn 5932/BGDĐT-QLCL + thực tế trường TH.
+   User có thể thêm/bớt thành viên trong SchoolInfoModal.
+   LƯU Ý 2026-04-19: Đã BỎ "Chủ tịch Công đoàn" do tổ chức Công đoàn giải thể từ 2025.
+   Tổng 12 thành viên (trước đây 13). */
 const DEFAULT_COUNCIL = [
   { name: '', role: 'Chủ tịch Hội đồng',      position: 'Hiệu trưởng' },
   { name: '', role: 'Phó Chủ tịch Hội đồng',  position: 'Phó Hiệu trưởng' },
   { name: '', role: 'Thư ký Hội đồng',        position: 'Thư ký Hội đồng trường' },
-  { name: '', role: 'Ủy viên',                position: 'Chủ tịch Công đoàn' },
   { name: '', role: 'Ủy viên',                position: 'Bí thư Chi đoàn Thanh niên CSHCM' },
   { name: '', role: 'Ủy viên',                position: 'Tổng phụ trách Đội TNTP HCM' },
   { name: '', role: 'Ủy viên',                position: 'Tổ trưởng Tổ khối 1' },
@@ -3347,8 +3348,8 @@ function HelpSchool({ setModal, onClose }) {
 
       <div className="help-note warn">⚠ <b>Cấu trúc hành chính 2 cấp:</b> Hệ thống chỉ có <b>Xã/Phường</b> và <b>Tỉnh/Thành phố</b>. KHÔNG còn huyện/Phòng GD&ĐT. AI tự lược các cụm này nếu gặp trong báo cáo cũ.</div>
 
-      <h3>👥 Hội đồng Tự đánh giá (13 thành viên mẫu)</h3>
-      <p>Kéo xuống phần "Hội đồng Tự đánh giá" trong cùng form. Đã có sẵn 13 thành viên theo CV 5932:</p>
+      <h3>👥 Hội đồng Tự đánh giá (12 thành viên mẫu)</h3>
+      <p>Kéo xuống phần "Hội đồng Tự đánh giá" trong cùng form. Đã có sẵn 12 thành viên theo CV 5932 (đã bỏ Chủ tịch Công đoàn do tổ chức này giải thể từ 2025):</p>
 
       <div className="help-mockup">
         <div className="help-mockup-label">Mẫu Hội đồng — mỗi hàng gồm Họ tên · Chức vụ · Nhiệm vụ</div>
@@ -3356,10 +3357,9 @@ function HelpSchool({ setModal, onClose }) {
           { n: 1, nv: 'Chủ tịch Hội đồng',      cv: 'Hiệu trưởng' },
           { n: 2, nv: 'Phó Chủ tịch Hội đồng',  cv: 'Phó Hiệu trưởng' },
           { n: 3, nv: 'Thư ký Hội đồng',        cv: 'Thư ký HĐ trường' },
-          { n: 4, nv: 'Ủy viên',                cv: 'Chủ tịch Công đoàn' },
-          { n: 5, nv: 'Ủy viên',                cv: 'Bí thư Chi đoàn' },
-          { n: 6, nv: 'Ủy viên',                cv: 'Tổng phụ trách Đội' },
-          { n: 7, nv: 'Ủy viên',                cv: 'Tổ trưởng Tổ khối 1-5' }
+          { n: 4, nv: 'Ủy viên',                cv: 'Bí thư Chi đoàn' },
+          { n: 5, nv: 'Ủy viên',                cv: 'Tổng phụ trách Đội' },
+          { n: 6, nv: 'Ủy viên',                cv: 'Tổ trưởng Tổ khối 1-5' }
         ].map(r => (
           <div key={r.n} className="mock-row">
             <span style={{width:20,textAlign:'center',color:'var(--faint)'}}>{r.n}</span>
@@ -3376,7 +3376,7 @@ function HelpSchool({ setModal, onClose }) {
         <li><b>Sửa trực tiếp</b>: Click vào ô Họ tên, Chức vụ, Nhiệm vụ → gõ → tự lưu</li>
         <li><b>+ Thêm thành viên</b>: nút phía dưới danh sách</li>
         <li><b>🗑 Xoá thành viên</b>: icon thùng rác cuối hàng</li>
-        <li><b>🔄 Khôi phục mẫu</b>: nếu đã chỉnh lộn xộn, bấm để reset về 13 thành viên mặc định</li>
+        <li><b>🔄 Khôi phục mẫu</b>: nếu đã chỉnh lộn xộn, bấm để reset về 12 thành viên mặc định</li>
       </ul>
 
       <div className="help-note info">💡 <b>Danh sách này được in ngay trang 2 của báo cáo Word</b> dưới dạng bảng "Danh sách và chữ ký thành viên Hội đồng tự đánh giá" để hội đồng ký tên đóng dấu.</div>
@@ -4177,7 +4177,7 @@ function SchoolInfoModal({ schoolInfo, onSave, onClose }) {
                 <IPlus className="w-3 h-3"/> Thêm thành viên
               </button>
               <button className="btn btn-xs btn-ghost"
-                onClick={() => { if (confirm('Khôi phục mẫu Hội đồng mặc định (13 thành viên)? Dữ liệu đang nhập sẽ bị ghi đè.')) setInfo(p => ({ ...p, council: DEFAULT_COUNCIL.map(m => ({ ...m })) })); }}>
+                onClick={() => { if (confirm('Khôi phục mẫu Hội đồng mặc định (12 thành viên)? Dữ liệu đang nhập sẽ bị ghi đè.')) setInfo(p => ({ ...p, council: DEFAULT_COUNCIL.map(m => ({ ...m })) })); }}>
                 <IRefresh className="w-3 h-3"/> Khôi phục mẫu
               </button>
             </div>
